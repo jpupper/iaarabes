@@ -1,8 +1,8 @@
 from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi import Request
+from fastapi import Request, UploadFile, File, Form
 
 import markdown2
 
@@ -14,10 +14,13 @@ import asyncio
 import os
 import time
 import mimetypes
+import json
 import torch
+import os
 
 from config import config, Args
 from util import pil_to_frame, bytes_to_pil
+from io import BytesIO
 from connection_manager import ConnectionManager, ServerFullException
 from img2img import Pipeline
 
@@ -37,6 +40,13 @@ class App:
         self.init_app()
 
     def init_app(self):
+        class NoCacheStaticFiles(StaticFiles):
+            async def get_response(self, path, scope):
+                response = await super().get_response(path, scope)
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
+                return response
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -78,9 +88,14 @@ class App:
                         await self.conn_manager.disconnect(user_id)
                         return
                     data = await self.conn_manager.receive_json(user_id)
-                    if data["status"] == "next_frame":
+                    if not data:
+                        # client likely disconnected
+                        return
+                    if data.get("status") == "next_frame":
                         info = pipeline.Info()
                         params = await self.conn_manager.receive_json(user_id)
+                        if not params:
+                            return
                         params = pipeline.InputParams(**params)
                         params = SimpleNamespace(**params.dict())
                         if info.input_mode == "image":
@@ -115,11 +130,30 @@ class App:
                         params = await self.conn_manager.get_latest_data(user_id)
                         if params is None:
                             continue
-                        image = pipeline.predict(params)
-                        if image is None:
-                            continue
-                        frame = pil_to_frame(image)
-                        yield frame
+                        await self.conn_manager.send_json(user_id, {"status": "inference_start"})
+                        try:
+                            image = pipeline.predict(params)
+                            if image is None:
+                                continue
+                            frame = pil_to_frame(image)
+                            logging.info(f"Yielding frame: {len(frame)} bytes to {user_id}")
+                            yield frame
+                        except Exception as e:
+                            logging.error(f"Prediction Error: {e}")
+                            # Inform UI clearly and stop stream
+                            await self.conn_manager.send_json(
+                                user_id,
+                                {"status": "error", "message": f"Prediction failed: {str(e)}"},
+                            )
+                            break
+                        finally:
+                            await self.conn_manager.send_json(
+                                user_id,
+                                {
+                                    "status": "inference_end",
+                                    "took": round(time.time() - last_time, 3),
+                                },
+                            )
                         if self.args.debug:
                             print(f"Time taken: {time.time() - last_time}")
 
@@ -141,25 +175,74 @@ class App:
                 page_content = markdown2.markdown(info.page_content)
 
             input_params = pipeline.InputParams.schema()
+            build_id = os.environ.get("LIVUALS_BUILD_ID", "dev")
             return JSONResponse(
                 {
                     "info": info_schema,
                     "input_params": input_params,
                     "max_queue_size": self.args.max_queue_size,
                     "page_content": page_content if info.page_content else "",
+                    "runtime": {
+                        "device": str(device),
+                        "dtype": str(torch_dtype),
+                        "acceleration": self.args.acceleration,
+                        "cuda": torch.cuda.is_available(),
+                        "mps": hasattr(torch.backends, "mps") and torch.backends.mps.is_available(),
+                        "ready": getattr(pipeline, "ready", True),
+                        "busy": getattr(pipeline, "busy", False),
+                        "build_id": build_id,
+                    },
                 }
             )
+
+        @self.app.get("/api/status")
+        async def status():
+            return JSONResponse(
+                {
+                    "ready": getattr(pipeline, "ready", True),
+                    "busy": getattr(pipeline, "busy", False),
+                }
+            )
+
+        @self.app.post("/api/snapshot")
+        async def snapshot(params: str = Form(...), image: UploadFile = File(None)):
+            try:
+                info = pipeline.Info()
+                params_dict = json.loads(params) if isinstance(params, str) else params
+                schema_params = pipeline.InputParams(**params_dict)
+                p = SimpleNamespace(**schema_params.dict())
+                if info.input_mode == "image":
+                    if image is None:
+                        raise HTTPException(status_code=400, detail="image required for image mode")
+                    data = await image.read()
+                    p.image = bytes_to_pil(data)
+                img = pipeline.predict(p)
+                buf = BytesIO()
+                img.save(buf, format="JPEG")
+                content = buf.getvalue()
+                headers = {"Content-Disposition": "attachment; filename=livuals_snapshot.jpg"}
+                return Response(content=content, media_type="image/jpeg", headers=headers)
+            except Exception as e:
+                logging.error(f"Snapshot Error: {e}")
+                return HTTPException(status_code=500, detail=str(e))
 
         if not os.path.exists("public"):
             os.makedirs("public")
 
         self.app.mount(
-            "/", StaticFiles(directory="./frontend/public", html=True), name="public"
+            "/", NoCacheStaticFiles(directory="./frontend/public", html=True), name="public"
         )
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch_dtype = torch.float16
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    torch_dtype = torch.float16
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    device = torch.device("mps")
+    torch_dtype = torch.float16
+else:
+    device = torch.device("cpu")
+    torch_dtype = torch.float32
 pipeline = Pipeline(config, device, torch_dtype)
 app = App(config, pipeline).app
 
