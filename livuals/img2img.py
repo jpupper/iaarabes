@@ -87,7 +87,7 @@ class Pipeline:
         )
         steps: int = Field(
             10,
-            min=1,
+            min=10,
             max=50,
             step=1,
             title="Steps",
