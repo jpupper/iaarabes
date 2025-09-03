@@ -11,6 +11,7 @@
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus, inferenceBusy, streamId } from '$lib/lcmLive';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
   import { getPipelineValues, deboucedPipelineValues } from '$lib/store';
+  import Lyrics from '$lib/modules/Lyrics.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -236,6 +237,8 @@
           Snapshot
         </Button>
         </div>
+        <!-- Lyrics Module: lista audios y sincroniza al prompt -->
+        <Lyrics />
         <PipelineOptions {pipelineParams}></PipelineOptions>
       </div>
     </article>
