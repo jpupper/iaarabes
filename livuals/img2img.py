@@ -29,8 +29,7 @@ taesd_model = "madebyollin/taesd"
 default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
-page_content = """<p>VJING using AI</p>
-"""
+page_content = """<p id="page_content">VJING using AI</p>"""
 
 
 class Pipeline:
@@ -138,6 +137,10 @@ class Pipeline:
         try:
             if hasattr(self, "stream") and self.device.type == "cuda":
                 image_tensor = self.stream.preprocess_image(params.image)
+                # Normalizar a [0,1] antes de procesar
+                if isinstance(image_tensor, torch.Tensor):
+                #Porque mierda entran valores negativos aca no se, pero si tira error, así que lo clampeo de 0 a 1 . 
+                    image_tensor = torch.clamp(image_tensor, 0, 1)
                 output_image = self.stream(image=image_tensor, prompt=params.prompt)
                 return output_image
             # CPU/MPS vía Diffusers
