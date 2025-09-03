@@ -11,6 +11,8 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
   import Warning from '$lib/components/Warning.svelte';
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus, inferenceBusy, streamId } from '$lib/lcmLive';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
+  import { getPipelineValues, deboucedPipelineValues } from '$lib/store';
+  import Lyrics from '$lib/modules/Lyrics.svelte';
   import { getPipelineValues, pipelineValues } from '$lib/store';
   import { derived } from 'svelte/store';
 
@@ -222,6 +224,8 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
           {/if}
         </Button>
         </div>
+        <!-- Lyrics Module: lista audios y sincroniza al prompt -->
+        <Lyrics />
         <PipelineOptions {pipelineParams}></PipelineOptions>
       </div>
     </article>
