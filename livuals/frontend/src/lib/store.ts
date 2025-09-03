@@ -13,3 +13,7 @@ export const deboucedPipelineValues: Readable<Record<string, any>>
 
 
 export const getPipelineValues = () => get(pipelineValues);
+
+export const lcmLiveStatus = writable('');
+export const inferenceBusy = writable(false);
+export const streamId = writable<string | null>(null);
