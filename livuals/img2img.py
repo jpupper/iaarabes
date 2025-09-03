@@ -152,30 +152,12 @@ class Pipeline:
         try:
             # Actualizar la configuración de pasos si cambió
             if params.steps != self.steps_config.total_steps:
-                # Reinicializar completamente el stream con los nuevos steps
                 self.steps_config = StepsConfig(params.steps)
                 if hasattr(self, "stream"):
-                    # Recrear el stream desde cero
-                    self.stream = StreamDiffusionWrapper(
-                        model_id_or_path=base_model,
-                        use_tiny_vae=self.args.taesd,
-                        device=self.device,
-                        dtype=self.torch_dtype,
-                        t_index_list=self.steps_config.t_index_list,
-                        frame_buffer_size=1,
-                        width=params.width,
-                        height=params.height,
-                        use_lcm_lora=False,
-                        output_type="pil",
-                        warmup=10,
-                        vae_id=None,
-                        acceleration=self.args.acceleration,
-                        mode="img2img",
-                        use_denoising_batch=True,
-                        cfg_type="none",
-                        use_safety_checker=self.args.safety_checker,
-                        engine_dir=self.args.engine_dir,
-                    )
+                    # Actualizar parámetros sin reiniciar
+                    self.stream.t_list = self.steps_config.t_index_list
+                    self.stream.denoising_steps_num = len(self.steps_config.t_index_list)
+                    # Re-preparar el scheduler con los nuevos pasos
                     self.stream.prepare(
                         prompt=params.prompt,
                         negative_prompt=default_negative_prompt,
