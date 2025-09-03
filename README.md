@@ -1,32 +1,56 @@
-# Instalación y ejecución en macOS
+# Instalación y Ejecución
 
-Requisitos:
+## Requisitos Generales
 
-- Python 3.10.9 exacto (`python3 -V` debe mostrar `3.10.9`)
+- Python 3.10.9 exacto
 - Node.js 18+ y npm para compilar el frontend
 - Git
 
-Pasos:
+## Windows
 
-1) Instalar dependencias de Python y StreamDiffusion
+### Instalación
+
+1) Instalar dependencias de Python y StreamDiffusion:
 
 ```
-cd iaarabes
+install.bat
+```
+
+### Ejecución
+
+1) Ejecutar la app (backend + frontend compilado):
+
+```
+runlivuals.bat
+```
+
+## macOS
+
+### Instalación
+
+1) Instalar dependencias de Python y StreamDiffusion:
+
+```
 chmod +x install_macos.sh
 ./install_macos.sh
 ```
 
-2) Ejecutar la app (backend + frontend compilado)
+### Ejecución
+
+1) Ejecutar la app (backend + frontend compilado):
 
 ```
-cd iaarabes
 chmod +x runlivuals_macos.sh
 ./runlivuals_macos.sh
 ```
 
-Notas:
+## Notas
 
-- En macOS no hay CUDA/TensorRT. El script fuerza `ACCELERATION=none` por defecto. Si tienes `xformers` instalado correctamente, puedes exportar `ACCELERATION=xformers` antes de ejecutar.
-- Para mejor rendimiento en Macs con Apple Silicon, Torch usa automáticamente MPS cuando es posible, aunque el código de ejemplo actualmente usa CPU si no detecta CUDA.
-- Si no tienes Python 3.10.9, usa `pyenv` o `brew` para instalarlo y asegúrate de que `python3` apunte a esa versión.
+### macOS
+- No hay CUDA/TensorRT. El script fuerza `ACCELERATION=none` por defecto. Si tienes `xformers` instalado correctamente, puedes exportar `ACCELERATION=xformers` antes de ejecutar
+- Para mejor rendimiento en Macs con Apple Silicon, Torch usa automáticamente MPS cuando es posible
+- Si no tienes Python 3.10.9, usa `pyenv` o `brew` para instalarlo
 
+### Windows
+- Asegúrate de tener Python 3.10.9 instalado y configurado en el PATH
+- Se recomienda tener CUDA instalado para mejor rendimiento
