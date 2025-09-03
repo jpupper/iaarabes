@@ -29,22 +29,7 @@ taesd_model = "madebyollin/taesd"
 default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
-page_content = """<h1 class="text-3xl font-bold">StreamDiffusion</h1>
-<h3 class="text-xl font-bold">Image-to-Image SD-Turbo</h3>
-<p class="text-sm">
-    This demo showcases
-    <a
-    href="https://github.com/cumulo-autumn/StreamDiffusion"
-    target="_blank"
-    class="text-blue-500 underline hover:no-underline">StreamDiffusion
-</a>
-Image to Image pipeline using
-    <a
-    href="https://huggingface.co/stabilityai/sd-turbo"
-    target="_blank"
-    class="text-blue-500 underline hover:no-underline">SD-Turbo</a
-    > with a MJPEG stream server.
-</p>
+page_content = """<p>VJING using AI</p>
 """
 
 
