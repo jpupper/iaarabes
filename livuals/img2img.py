@@ -12,6 +12,7 @@ sys.path.append(
 from utils.wrapper import StreamDiffusionWrapper
 
 import torch
+import numpy as np
 
 from config import Args
 from pydantic import BaseModel, Field
@@ -104,6 +105,11 @@ class Pipeline:
         self.ready: bool = False
         self.busy: bool = False
         self.steps_config = StepsConfig(params.steps)
+        self.last_valid_image = None
+        self.in_transition = False
+        self.transition_progress = 0.0
+        self.old_steps_config = None
+        self.transition_frames = 10
 
         if device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -147,43 +153,86 @@ class Pipeline:
             self._diffusers_pipe.to(device)
             self.ready = True
 
+    def blend_frames(self, frame1, frame2, alpha):
+        """Blend two frames using alpha blending"""
+        try:
+            # Convert to numpy arrays first
+            if isinstance(frame1, Image.Image):
+                frame1 = np.array(frame1)
+            if isinstance(frame2, Image.Image):
+                frame2 = np.array(frame2)
+            
+            # Ensure both are float32 for blending
+            frame1 = frame1.astype(np.float32)
+            frame2 = frame2.astype(np.float32)
+            
+            # Do the blend in numpy
+            blended = frame1 * (1 - alpha) + frame2 * alpha
+            blended = np.clip(blended, 0, 255).astype(np.uint8)
+            
+            return Image.fromarray(blended)
+        except Exception as e:
+            print(f"Blend error: {e}")
+            return frame2 if alpha > 0.5 else frame1
+
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
         self.busy = True
         try:
-            # Actualizar la configuración de pasos si cambió
-            if params.steps != self.steps_config.total_steps:
-                self.steps_config = StepsConfig(params.steps)
-                if hasattr(self, "stream"):
-                    # Actualizar parámetros sin reiniciar
-                    self.stream.t_list = self.steps_config.t_index_list
-                    self.stream.denoising_steps_num = len(self.steps_config.t_index_list)
-                    # Re-preparar el scheduler con los nuevos pasos
-                    self.stream.prepare(
-                        prompt=params.prompt,
-                        negative_prompt=default_negative_prompt,
-                        num_inference_steps=self.steps_config.total_steps,
-                        guidance_scale=1.2
-                    )
+            current_output = None
+            
+            # Normal processing first
             if hasattr(self, "stream") and self.device.type == "cuda":
                 image_tensor = self.stream.preprocess_image(params.image)
-                # Normalizar a [0,1] antes de procesar
                 if isinstance(image_tensor, torch.Tensor):
-                #Porque mierda entran valores negativos aca no se, pero si tira error, así que lo clampeo de 0 a 1 . 
                     image_tensor = torch.clamp(image_tensor, 0, 1)
-                output_image = self.stream(image=image_tensor, prompt=params.prompt)
+                current_output = self.stream(image=image_tensor, prompt=params.prompt)
+            else:
+                assert self._diffusers_pipe is not None
+                img = params.image
+                if img.width != params.width or img.height != params.height:
+                    img = img.resize((params.width, params.height), Image.BICUBIC)
+                current_output = self._diffusers_pipe(
+                    prompt=params.prompt,
+                    image=img,
+                    num_inference_steps=int(params.steps),
+                    guidance_scale=1.2,
+                ).images[0]
+
+            # Check if steps changed
+            if params.steps != self.steps_config.total_steps:
+                if not self.in_transition and self.last_valid_image is not None:
+                    self.in_transition = True
+                    self.transition_progress = 0.0
+                    self.old_steps_config = self.steps_config
+                    self.steps_config = StepsConfig(params.steps)
+                    
+                    if hasattr(self, "stream"):
+                        self.stream.t_list = self.steps_config.t_index_list
+                        self.stream.denoising_steps_num = len(self.steps_config.t_index_list)
+                        self.stream.prepare(
+                            prompt=params.prompt,
+                            negative_prompt=default_negative_prompt,
+                            num_inference_steps=self.steps_config.total_steps,
+                            guidance_scale=1.2
+                        )
+
+            # Handle transition if active
+            if self.in_transition and self.last_valid_image is not None:
+                alpha = self.transition_progress / self.transition_frames
+                output_image = self.blend_frames(self.last_valid_image, current_output, alpha)
+                
+                self.transition_progress += 1
+                if self.transition_progress >= self.transition_frames:
+                    self.in_transition = False
+                    self.transition_progress = 0.0
+                    self.last_valid_image = current_output
+                    return current_output
+                
                 return output_image
-            # CPU/MPS vía Diffusers
-            assert self._diffusers_pipe is not None
-            img = params.image
-            # Ajustar tamaño si hace falta
-            if img.width != params.width or img.height != params.height:
-                img = img.resize((params.width, params.height), Image.BICUBIC)
-            result = self._diffusers_pipe(
-                prompt=params.prompt,
-                image=img,
-                num_inference_steps=int(params.steps),
-                guidance_scale=1.2,
-            )
-            return result.images[0]
+            
+            # Store last valid image and return current output
+            self.last_valid_image = current_output
+            return current_output
+            
         finally:
             self.busy = False
