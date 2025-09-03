@@ -212,9 +212,6 @@
             Start
           {/if}
         </Button>
-        <Button on:click={snapshotOnce} disabled={!backendReady} classList={'text-lg my-1 p-2 w-full bg-gray-700 dark:bg-gray-300 text-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-200'}>
-          Snapshot
-        </Button>
         </div>
         <PipelineOptions {pipelineParams}></PipelineOptions>
       </div>
