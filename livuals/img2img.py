@@ -16,6 +16,11 @@ import torch
 from config import Args
 from pydantic import BaseModel, Field
 from PIL import Image
+from typing import Optional
+try:
+    from diffusers import AutoPipelineForImage2Image
+except Exception:
+    AutoPipelineForImage2Image = None  # type: ignore
 import math
 
 base_model = "stabilityai/sd-turbo"
@@ -63,49 +68,105 @@ class Pipeline:
         #     id="negative_prompt",
         # )
         width: int = Field(
-            512, min=2, max=15, title="Width", disabled=True, hide=True, id="width"
+            384,
+            min=256,
+            max=512,
+            step=64,
+            title="Width",
+            field="range",
+            id="width",
+            hide=False,
         )
         height: int = Field(
-            512, min=2, max=15, title="Height", disabled=True, hide=True, id="height"
+            384,
+            min=256,
+            max=512,
+            step=64,
+            title="Height",
+            field="range",
+            id="height",
+            hide=False,
         )
         steps: int = Field(
-            50, min=1, max=100, title="Steps", id="steps"
+            10,
+            min=1,
+            max=50,
+            step=1,
+            title="Steps",
+            field="range",
+            id="steps",
         )
 
     def __init__(self, args: Args, device: torch.device, torch_dtype: torch.dtype):
         params = self.InputParams()
-        self.stream = StreamDiffusionWrapper(
-            model_id_or_path=base_model,
-            use_tiny_vae=args.taesd,
-            device=device,
-            dtype=torch_dtype,
-            t_index_list=[35, 45],
-            frame_buffer_size=1,
-            width=params.width,
-            height=params.height,
-            use_lcm_lora=False,
-            output_type="pil",
-            warmup=10,
-            vae_id=None,
-            acceleration=args.acceleration,
-            mode="img2img",
-            use_denoising_batch=True,
-            cfg_type="none",
-            use_safety_checker=args.safety_checker,
-            # enable_similar_image_filter=True,
-            # similar_image_filter_threshold=0.98,
-            engine_dir=args.engine_dir,
-        )
+        self.device = device
+        self.torch_dtype = torch_dtype
+        self.args = args
+        self._diffusers_pipe = None  # type: Optional[AutoPipelineForImage2Image]
+        self.ready: bool = False
+        self.busy: bool = False
 
-        self.last_prompt = default_prompt
-        self.stream.prepare(
-            prompt=default_prompt,
-            negative_prompt=default_negative_prompt,
-            num_inference_steps=50,
-            guidance_scale=1.2,
-        )
+        if device.type == "cuda":
+            # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
+            self.stream = StreamDiffusionWrapper(
+                model_id_or_path=base_model,
+                use_tiny_vae=args.taesd,
+                device=device,
+                dtype=torch_dtype,
+                t_index_list=[35, 45],
+                frame_buffer_size=1,
+                width=params.width,
+                height=params.height,
+                use_lcm_lora=False,
+                output_type="pil",
+                warmup=10,
+                vae_id=None,
+                acceleration=args.acceleration,
+                mode="img2img",
+                use_denoising_batch=True,
+                cfg_type="none",
+                use_safety_checker=args.safety_checker,
+                engine_dir=args.engine_dir,
+            )
+            self.last_prompt = default_prompt
+            self.stream.prepare(
+                prompt=default_prompt,
+                negative_prompt=default_negative_prompt,
+                num_inference_steps=50,
+                guidance_scale=1.2,
+            )
+            self.ready = True
+        else:
+            # Fallback Diffusers para CPU/MPS
+            if AutoPipelineForImage2Image is None:
+                raise RuntimeError("diffusers no está disponible para el modo CPU/MPS")
+            self._diffusers_pipe = AutoPipelineForImage2Image.from_pretrained(
+                base_model,
+                torch_dtype=torch_dtype,
+                safety_checker=None if not args.safety_checker else None,
+            )
+            self._diffusers_pipe.to(device)
+            self.ready = True
 
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
-        image_tensor = self.stream.preprocess_image(params.image)
-        output_image = self.stream(image=image_tensor, prompt=params.prompt)
-        return output_image
+        self.busy = True
+        try:
+            if hasattr(self, "stream") and self.device.type == "cuda":
+                image_tensor = self.stream.preprocess_image(params.image)
+                output_image = self.stream(image=image_tensor, prompt=params.prompt)
+                return output_image
+            # CPU/MPS vía Diffusers
+            assert self._diffusers_pipe is not None
+            img = params.image
+            # Ajustar tamaño si hace falta
+            if img.width != params.width or img.height != params.height:
+                img = img.resize((params.width, params.height), Image.BICUBIC)
+            result = self._diffusers_pipe(
+                prompt=params.prompt,
+                image=img,
+                num_inference_steps=int(params.steps),
+                guidance_scale=1.2,
+            )
+            return result.images[0]
+        finally:
+            self.busy = False
