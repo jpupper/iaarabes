@@ -36,7 +36,7 @@
         on:click={takeSnapshot}
         disabled={!isLCMRunning}
         title={'Take Snapshot'}
-        classList={'text-sm ml-auto text-white p-1 shadow-lg rounded-lg opacity-50'}
+        classList={'text-lg ml-auto text-white p-2 shadow-lg rounded-lg opacity-70 hover:opacity-100 transition-opacity'}
       >
         <Floppy classList={''} />
       </Button>
