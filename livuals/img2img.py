@@ -16,7 +16,21 @@ import torch
 from config import Args
 from pydantic import BaseModel, Field
 from PIL import Image
-from typing import Optional
+from typing import Optional, List, Dict, Any
+
+class StepsConfig:
+    def __init__(self, total_steps: int = 50):
+        self.total_steps = total_steps
+        self._base_t1 = 35
+        self._base_t2 = 45
+        self._base_total = 50
+    
+    @property
+    def t_index_list(self) -> List[int]:
+        t1 = int((self._base_t1 * self.total_steps) / self._base_total)
+        t2 = int((self._base_t2 * self.total_steps) / self._base_total)
+        return [t1, t2]
+
 try:
     from diffusers import AutoPipelineForImage2Image
 except Exception:
@@ -89,6 +103,7 @@ class Pipeline:
         self._diffusers_pipe = None  # type: Optional[AutoPipelineForImage2Image]
         self.ready: bool = False
         self.busy: bool = False
+        self.steps_config = StepsConfig(params.steps)
 
         if device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -97,7 +112,7 @@ class Pipeline:
                 use_tiny_vae=args.taesd,
                 device=device,
                 dtype=torch_dtype,
-                t_index_list=[35, 45],
+                t_index_list=self.steps_config.t_index_list,
                 frame_buffer_size=1,
                 width=params.width,
                 height=params.height,
@@ -116,7 +131,7 @@ class Pipeline:
             self.stream.prepare(
                 prompt=default_prompt,
                 negative_prompt=default_negative_prompt,
-                num_inference_steps=50,
+                num_inference_steps=self.steps_config.total_steps,
                 guidance_scale=1.2,
             )
             self.ready = True
@@ -135,6 +150,38 @@ class Pipeline:
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
         self.busy = True
         try:
+            # Actualizar la configuración de pasos si cambió
+            if params.steps != self.steps_config.total_steps:
+                # Reinicializar completamente el stream con los nuevos steps
+                self.steps_config = StepsConfig(params.steps)
+                if hasattr(self, "stream"):
+                    # Recrear el stream desde cero
+                    self.stream = StreamDiffusionWrapper(
+                        model_id_or_path=base_model,
+                        use_tiny_vae=self.args.taesd,
+                        device=self.device,
+                        dtype=self.torch_dtype,
+                        t_index_list=self.steps_config.t_index_list,
+                        frame_buffer_size=1,
+                        width=params.width,
+                        height=params.height,
+                        use_lcm_lora=False,
+                        output_type="pil",
+                        warmup=10,
+                        vae_id=None,
+                        acceleration=self.args.acceleration,
+                        mode="img2img",
+                        use_denoising_batch=True,
+                        cfg_type="none",
+                        use_safety_checker=self.args.safety_checker,
+                        engine_dir=self.args.engine_dir,
+                    )
+                    self.stream.prepare(
+                        prompt=params.prompt,
+                        negative_prompt=default_negative_prompt,
+                        num_inference_steps=self.steps_config.total_steps,
+                        guidance_scale=1.2
+                    )
             if hasattr(self, "stream") and self.device.type == "cuda":
                 image_tensor = self.stream.preprocess_image(params.image)
                 # Normalizar a [0,1] antes de procesar
