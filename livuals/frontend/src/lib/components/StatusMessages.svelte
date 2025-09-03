@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { lcmLiveStatus, inferenceBusy, streamId } from '$lib/lcmLive';
+  import { lcmLiveStatus, inferenceBusy, streamId, inferenceTime } from '$lib/lcmLive';
 
   export let runtimeNotice: string | undefined = undefined;
   export let buildId: string | undefined = undefined;
@@ -16,7 +16,7 @@
   {#if buildId}
     <div class="text-xs opacity-70">Build: {buildId}</div>
   {/if}
-  <div class="text-xs opacity-80">Status: {$lcmLiveStatus}{#if $inferenceBusy} · Inference: busy{/if}{#if $streamId} · ID: {$streamId}{/if}</div>
+  <div class="text-xs opacity-80">Status: {$lcmLiveStatus}{#if $inferenceBusy} · Inference: busy{/if}{#if $streamId} · ID: {$streamId}{/if}{#if $inferenceTime !== null} · Last inference: {$inferenceTime.toFixed(3)}s{/if}</div>
   {#if !backendReady}
     <div class="text-sm rounded-md px-3 py-2 border border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-500">
       {loadingNotice}

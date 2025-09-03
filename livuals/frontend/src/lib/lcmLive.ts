@@ -14,6 +14,7 @@ const initStatus: LCMLiveStatus = LCMLiveStatus.DISCONNECTED;
 export const lcmLiveStatus = writable<LCMLiveStatus>(initStatus);
 export const streamId = writable<string | null>(null);
 export const inferenceBusy = writable<boolean>(false);
+export const inferenceTime = writable<number | null>(null);
 
 let websocket: WebSocket | null = null;
 export const lcmLiveActions = {
@@ -57,7 +58,7 @@ export const lcmLiveActions = {
                             break;
                         case "inference_end":
                             inferenceBusy.set(false);
-                            console.log(`Inference took ${data.took ?? '?'}s`);
+                            inferenceTime.set(data.took ?? null);
                             break;
                         case "wait":
                             lcmLiveStatus.set(LCMLiveStatus.WAIT);
