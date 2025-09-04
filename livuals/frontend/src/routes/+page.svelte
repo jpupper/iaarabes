@@ -99,12 +99,13 @@ import AIControls from '$lib/modules/AIControls.svelte';
   ></script>
 </svelte:head>
 
-<main class="container mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 bg-white dark:bg-black rounded-lg shadow-lg my-4">
+<main class="main-layout">
   <Warning bind:message={warningMessage}></Warning>
-  <div class="flex justify-center mb-6">
+  <div class="flex justify-center">
     <img src="logo.png" alt="Logo" class="h-12" />
   </div>
-  <article class="text-center bg-white dark:bg-black border border-black dark:border-white p-4 rounded-lg">
+  
+  <article class="module-container text-center">
     {#if pageContent}
       {@html pageContent}
     {/if}
@@ -120,20 +121,31 @@ import AIControls from '$lib/modules/AIControls.svelte';
       </p>
     {/if}
   </article>
+
   {#if pipelineParams}
-  <article class="my-3 grid grid-cols-1 gap-3 sm:grid-cols-2 bg-white dark:bg-black border border-black dark:border-white p-4 rounded-lg">
-      <div class="sm:col-span-2">
-        <!-- AI Controls Module: maneja la parte de IA, video input y opciones -->
-        <AIControls 
-          {isImageMode} 
-          {pipelineParams} 
-          bind:warningMessage={warningMessage} 
-          disabled={!backendReady} 
-        />
-        
-        <!-- Lyrics Module: lista audios y sincroniza al prompt -->
-        <Lyrics />
-      </div>
+    <article class="module-container">
+      <!-- AI Controls Module -->
+      <AIControls 
+        {isImageMode} 
+        {pipelineParams} 
+        bind:warningMessage={warningMessage} 
+        disabled={!backendReady} 
+      />
+    </article>
+
+    <article class="module-container">
+      <!-- Lyrics Module -->
+      <Lyrics />
+    </article>
+
+    <article class="module-container">
+      <!-- Status Messages Module -->
+      <StatusMessages
+        {runtimeNotice}
+        {buildId}
+        {backendReady}
+        {loadingNotice}
+      />
     </article>
   {:else}
     <!-- loading -->
@@ -142,13 +154,6 @@ import AIControls from '$lib/modules/AIControls.svelte';
       <p>Loading...</p>
     </div>
   {/if}
-
-  <StatusMessages
-    {runtimeNotice}
-    {buildId}
-    {backendReady}
-    {loadingNotice}
-  />
 </main>
 
 <style>
