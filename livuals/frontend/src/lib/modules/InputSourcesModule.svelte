@@ -5,7 +5,8 @@
 
   let deviceId: string = '';
   
-  onMount(() => {
+  onMount(async () => {
+    await mediaStreamActions.enumerateDevices();
     if ($mediaDevices && $mediaDevices.length > 0) {
       deviceId = $mediaDevices[0].deviceId;
     }
