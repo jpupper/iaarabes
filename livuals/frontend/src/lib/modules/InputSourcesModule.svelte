@@ -12,12 +12,9 @@
   });
 </script>
 
-<div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+<div>
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-bold">Input Sources</h2>
-    <button class="px-3 py-1 text-sm bg-black dark:bg-white text-white dark:text-black rounded-md hover:bg-gray-800 dark:hover:bg-gray-200">
-      + Add
-    </button>
   </div>
 
   <div class="space-y-2">
@@ -32,8 +29,6 @@
           <div class="text-left">
             <div class="font-medium">Camera 1</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">
-              1920x1080 • 30fps
-              <br />
               USB Camera
             </div>
           </div>
@@ -64,8 +59,6 @@
         <div class="text-left">
           <div class="font-medium">Screen Share</div>
           <div class="text-sm text-gray-600 dark:text-gray-400">
-            Desktop • 60fps
-            <br />
             Share your screen
           </div>
         </div>
