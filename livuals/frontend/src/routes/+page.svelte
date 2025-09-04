@@ -13,15 +13,6 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
   import { getPipelineValues, deboucedPipelineValues } from '$lib/store';
   import Lyrics from '$lib/modules/Lyrics.svelte';
-  import { getPipelineValues, pipelineValues } from '$lib/store';
-  import { derived } from 'svelte/store';
-
-  const deboucedPipelineValues = derived(pipelineValues, ($pipelineValues, set) => {
-    const debounced = setTimeout(() => {
-      set($pipelineValues);
-    }, 100);
-    return () => clearTimeout(debounced);
-  });
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
