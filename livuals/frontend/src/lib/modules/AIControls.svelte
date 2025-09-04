@@ -81,8 +81,10 @@
   }
 </script>
 
-<div class="flex flex-col gap-4 w-full">
-  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+<div class="flex flex-col gap-6 w-full">
+  <h2 class="text-xl font-bold">AI Controls</h2>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     {#if isImageMode}
       <div class="sm:col-start-1">
         <VideoInput
@@ -96,21 +98,23 @@
     </div>
   </div>
   
-  <div class="flex flex-col gap-4 w-full">
-    <h3 class="text-base font-semibold">Options</h3>
+  <div class="flex flex-col gap-4">
     <div class="flex gap-3">
-      <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg my-1 p-2 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
+      <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
         {#if isLCMRunning}
           Stop
         {:else}
           Start
         {/if}
       </Button>
-      <Button on:click={snapshotOnce} classList={'text-lg my-1 p-2 bg-blue-600 text-white hover:bg-blue-700'}>
+      <Button on:click={snapshotOnce} classList={'text-lg p-3 bg-blue-600 text-white hover:bg-blue-700'}>
         Snapshot
       </Button>
     </div>
     
-    <PipelineOptions {pipelineParams} />
+    <div class="mt-4">
+      <h3 class="text-lg font-semibold mb-4">Pipeline Options</h3>
+      <PipelineOptions {pipelineParams} />
+    </div>
   </div>
 </div>

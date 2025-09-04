@@ -164,53 +164,77 @@
   }
 </script>
 
-<div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-700 rounded-md p-3 maincont">
-  <h3 class="text-base font-semibold">Lyrics</h3>
-  {#if errorMsg}
-    <div class="text-sm text-red-600">{errorMsg}</div>
-  {/if}
-  <ul class="space-y-1 max-h-48 overflow-auto">
-    {#each tracks as t}
-      <li class="flex items-center gap-2">
-        <button class="px-2 py-1 text-xs border rounded" on:click={() => selectTrack(t)}>Play</button>
-        <span class="text-sm">{t.artist ? `${t.artist} — ${t.title}` : t.title}</span>
-      </li>
-    {/each}
-    {#if tracks.length === 0}
-      <li class="text-sm opacity-70">No hay audios en /audio</li>
-    {/if}
-  </ul>
-  <audio bind:this={audioEl} on:timeupdate={onTimeUpdate} on:loadedmetadata={onLoadedMetadata} controls style="width: 100%" />
-  <div class="text-sm opacity-80">Línea actual: {currentLine || '—'}</div>
+<div class="flex flex-col gap-4 w-full">
+  <h2 class="text-xl font-bold">Lyrics & Prompts</h2>
 
-  <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-    <div class="flex items-center gap-3 mb-2">
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" bind:checked={enablePromptify} />
-        Convertir a prompt visual
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <input type="radio" name="mode" value="replace" bind:group={mode} /> Reemplazar
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <input type="radio" name="mode" value="append" bind:group={mode} /> Agregar
-      </label>
+  <div class="flex flex-col gap-4">
+    {#if errorMsg}
+      <div class="text-sm text-red-600 rounded-md px-4 py-3 bg-red-50 border border-red-300">{errorMsg}</div>
+    {/if}
+
+    <div class="flex flex-col gap-3">
+      <h3 class="text-lg font-semibold">Available Tracks</h3>
+      <ul class="space-y-2 max-h-48 overflow-auto p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+        {#each tracks as t}
+          <li class="flex items-center gap-3">
+            <button class="px-3 py-1.5 text-sm bg-black dark:bg-white text-white dark:text-black rounded-md hover:bg-gray-800 dark:hover:bg-gray-200" 
+              on:click={() => selectTrack(t)}>Play</button>
+            <span class="text-sm">{t.artist ? `${t.artist} — ${t.title}` : t.title}</span>
+          </li>
+        {/each}
+        {#if tracks.length === 0}
+          <li class="text-sm opacity-70 p-2">No hay audios en /audio</li>
+        {/if}
+      </ul>
+
+      <audio bind:this={audioEl} on:timeupdate={onTimeUpdate} on:loadedmetadata={onLoadedMetadata} 
+        controls class="w-full" />
+      
+      <div class="text-sm p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+        Línea actual: <span class="font-medium">{currentLine || '—'}</span>
+      </div>
     </div>
-    <div class="flex flex-wrap items-center gap-2 mb-2">
-      <label class="text-sm">Estilo:</label>
-      <select class="text-sm border rounded px-2 py-1 dark:text-black" bind:value={stylePreset}
-        on:change={() => currentLine && applyPrompt(currentLine)}>
-        <option value="cinematic">Cinematic photo</option>
-        <option value="digital-art">Digital art</option>
-        <option value="anime">Anime</option>
-        <option value="watercolor">Watercolor</option>
-        <option value="cyberpunk">Cyberpunk</option>
-        <option value="surreal">Surreal</option>
-      </select>
-      <input class="flex-1 text-sm border rounded px-2 py-1 dark:text-black" placeholder="Sufijo de calidad (extra)"
-        bind:value={extraSuffix} on:change={() => currentLine && applyPrompt(currentLine)} />
+
+    <div class="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-semibold">Prompt Settings</h3>
+      
+      <div class="flex items-center gap-4 flex-wrap">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" class="w-4 h-4" bind:checked={enablePromptify} />
+          <span class="text-sm font-medium">Convertir a prompt visual</span>
+        </label>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2">
+            <input type="radio" class="w-4 h-4" name="mode" value="replace" bind:group={mode} />
+            <span class="text-sm">Reemplazar</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="radio" class="w-4 h-4" name="mode" value="append" bind:group={mode} />
+            <span class="text-sm">Agregar</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-sm font-medium">Estilo:</label>
+        <select class="text-sm px-3 py-2 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-black" 
+          bind:value={stylePreset} on:change={() => currentLine && applyPrompt(currentLine)}>
+          <option value="cinematic">Cinematic photo</option>
+          <option value="digital-art">Digital art</option>
+          <option value="anime">Anime</option>
+          <option value="watercolor">Watercolor</option>
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="surreal">Surreal</option>
+        </select>
+        <input class="flex-1 text-sm px-3 py-2 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-black" 
+          placeholder="Sufijo de calidad (extra)" bind:value={extraSuffix} 
+          on:change={() => currentLine && applyPrompt(currentLine)} />
+      </div>
+
+      <div class="text-sm p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+        Preview prompt: <span class="font-medium">{previewPrompt || (enablePromptify ? '—' : currentLine || '—')}</span>
+      </div>
     </div>
-    <div class="text-xs opacity-80">Preview prompt: {previewPrompt || (enablePromptify ? '—' : currentLine || '—')}</div>
   </div>
 </div>
 
