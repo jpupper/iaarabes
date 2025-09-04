@@ -164,7 +164,7 @@
   }
 </script>
 
-<div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-700 rounded-md p-3">
+<div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-700 rounded-md p-3 maincont">
   <h3 class="text-base font-semibold">Lyrics</h3>
   {#if errorMsg}
     <div class="text-sm text-red-600">{errorMsg}</div>

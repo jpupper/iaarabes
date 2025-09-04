@@ -2,17 +2,13 @@
   import { onMount } from 'svelte';
   import type { Fields, PipelineInfo } from '$lib/types';
   import { PipelineMode } from '$lib/types';
-  import ImagePlayer from '$lib/components/ImagePlayer.svelte';
-  import VideoInput from '$lib/components/VideoInput.svelte';
-  import Button from '$lib/components/Button.svelte';
-  import PipelineOptions from '$lib/components/PipelineOptions.svelte';
-  import Spinner from '$lib/icons/spinner.svelte';
-import StatusMessages from '$lib/components/StatusMessages.svelte';
+      import Button from '$lib/components/Button.svelte';
+    import Spinner from '$lib/icons/spinner.svelte';
+import StatusMessages from '$lib/modules/StatusMessages.svelte';
   import Warning from '$lib/components/Warning.svelte';
-  import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus, inferenceBusy, streamId } from '$lib/lcmLive';
-  import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
-  import { getPipelineValues, deboucedPipelineValues } from '$lib/store';
-  import Lyrics from '$lib/modules/Lyrics.svelte';
+  import { lcmLiveStatus, LCMLiveStatus } from '$lib/lcmLive';
+import AIControls from '$lib/modules/AIControls.svelte';
+      import Lyrics from '$lib/modules/Lyrics.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -94,73 +90,7 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
     setTimeout(getQueueSize, 10000);
   }
 
-  function getSreamdata() {
-    if (isImageMode) {
-      return [getPipelineValues(), $onFrameChangeStore?.blob];
-    } else {
-      return [$deboucedPipelineValues];
-    }
-  }
-
   $: isLCMRunning = $lcmLiveStatus !== LCMLiveStatus.DISCONNECTED;
-  $: if ($lcmLiveStatus === LCMLiveStatus.TIMEOUT) {
-    warningMessage = 'Session timed out. Please try again.';
-  }
-  let disabled = false;
-  async function toggleLcmLive() {
-    try {
-      if (!isLCMRunning) {
-        if (isImageMode) {
-          await mediaStreamActions.enumerateDevices();
-          await mediaStreamActions.start();
-        }
-        disabled = true;
-        await lcmLiveActions.start(getSreamdata);
-        disabled = false;
-        toggleQueueChecker(false);
-      } else {
-        if (isImageMode) {
-          mediaStreamActions.stop();
-        }
-        lcmLiveActions.stop();
-        toggleQueueChecker(true);
-      }
-    } catch (e) {
-      warningMessage = e instanceof Error ? e.message : '';
-      disabled = false;
-      toggleQueueChecker(true);
-    }
-  }
-
-  async function snapshotOnce() {
-    try {
-      const params = getPipelineValues();
-      const fd = new FormData();
-      fd.append('params', JSON.stringify(params));
-      if (isImageMode) {
-        const blob = $onFrameChangeStore?.blob;
-        if (!blob || blob.size === 0) {
-          warningMessage = 'No hay frame de cámara disponible todavía.';
-          return;
-        }
-        fd.append('image', blob, 'input.jpg');
-      }
-      const res = await fetch('/api/snapshot', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(`Snapshot failed: ${msg}`);
-      }
-      const out = await res.blob();
-      const url = URL.createObjectURL(out);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `livuals_snapshot_${Date.now()}.jpg`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      warningMessage = e instanceof Error ? e.message : String(e);
-    }
-  }
 </script>
 
 <svelte:head>
@@ -192,32 +122,17 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
   </article>
   {#if pipelineParams}
   <article class="my-3 grid grid-cols-1 gap-3 sm:grid-cols-2 bg-white dark:bg-black border border-black dark:border-white p-4 rounded-lg">
-      {#if isImageMode}
-        <div class="sm:col-start-1">
-          <VideoInput
-            width={Number(pipelineParams.width.default)}
-            height={Number(pipelineParams.height.default)}
-          ></VideoInput>
-        </div>
-      {/if}
-      <div class={isImageMode ? 'sm:col-start-2' : 'col-span-2'}>
-        <ImagePlayer />
-      </div>
       <div class="sm:col-span-2">
-        <div class="flex flex-col gap-4 w-full">
-          <h3 class="text-base font-semibold">Options</h3>
-          <div class="flex gap-3">
-          <Button on:click={toggleLcmLive} disabled={disabled || !backendReady} classList={'text-lg my-1 p-2 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
-          {#if isLCMRunning}
-            Stop
-          {:else}
-            Start
-          {/if}
-        </Button>
-        </div>
+        <!-- AI Controls Module: maneja la parte de IA, video input y opciones -->
+        <AIControls 
+          {isImageMode} 
+          {pipelineParams} 
+          bind:warningMessage={warningMessage} 
+          disabled={!backendReady} 
+        />
+        
         <!-- Lyrics Module: lista audios y sincroniza al prompt -->
         <Lyrics />
-        <PipelineOptions {pipelineParams}></PipelineOptions>
       </div>
     </article>
   {:else}
@@ -236,14 +151,34 @@ import StatusMessages from '$lib/components/StatusMessages.svelte';
   />
 </main>
 
-<style lang="postcss">
+<style>
   :global(html) {
-    @apply text-black bg-white dark:bg-black dark:text-white;
+    color: black;
+    background-color: white;
+  }
+  :global(html.dark) {
+    color: white;
+    background-color: black;
   }
   :global(.slider) {
-    @apply w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer;
+    width: 100%;
+    height: 0.5rem;
+    background-color: #e5e7eb;
+    border-radius: 0.5rem;
+    appearance: none;
+    cursor: pointer;
+  }
+  :global(.dark .slider) {
+    background-color: #374151;
   }
   :global(.slider::-webkit-slider-thumb) {
-    @apply w-4 h-4 bg-black dark:bg-white rounded-full appearance-none;
+    width: 1rem;
+    height: 1rem;
+    background-color: black;
+    border-radius: 9999px;
+    appearance: none;
+  }
+  :global(.dark .slider::-webkit-slider-thumb) {
+    background-color: white;
   }
 </style>

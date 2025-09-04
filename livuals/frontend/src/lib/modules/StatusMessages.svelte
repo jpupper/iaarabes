@@ -31,8 +31,7 @@
     {/if}
   </div>
   {#if !backendReady}
-    <div class="text-sm rounded-md px-3 py-2 borde
-    r border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-500">
+    <div class="text-sm rounded-md px-3 py-2 border border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-500">
       {loadingNotice}
     </div>
   {/if}
