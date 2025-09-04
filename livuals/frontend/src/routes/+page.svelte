@@ -10,6 +10,7 @@
   import AIControls from '$lib/modules/AIControls.svelte';
   import StreamOutput from '$lib/modules/StreamOutput.svelte';
   import Lyrics from '$lib/modules/Lyrics.svelte';
+  import InputSourcesModule from '$lib/modules/InputSourcesModule.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -140,6 +141,11 @@
         {pipelineParams}
         disabled={!backendReady}
       />
+    </article>
+
+    <article class="module-container">
+      <!-- Input Sources Module -->
+      <InputSourcesModule />
     </article>
 
     <article class="module-container">
