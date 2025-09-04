@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { pipelineValues } from '$lib/store';
+  import { get } from 'svelte/store';
 
   type Track = { id: string; file: string; artist: string; title: string; url: string };
   type Cue = { t: number; text: string };
@@ -9,6 +10,7 @@
   let current: Track | null = null;
   let cues: Cue[] = [];
   let currentLine = '';
+  let previewPrompt = '';
   let audioEl: HTMLAudioElement;
   let loading = false;
   let errorMsg = '';
@@ -22,8 +24,74 @@
     }
   });
 
+  // ------------------ Promptify (convert lyric -> visual prompt) ------------------
+  let enablePromptify = true;
+  let mode: 'replace' | 'append' = 'replace';
+  let stylePreset: 'cinematic' | 'digital-art' | 'anime' | 'watercolor' | 'cyberpunk' | 'surreal' = 'cinematic';
+  let extraSuffix = 'highly detailed, cinematic lighting, dramatic composition, ultra realistic, 8k';
+
+  const styleMap: Record<string, string> = {
+    cinematic: 'a cinematic photograph',
+    'digital-art': 'a detailed digital illustration',
+    anime: 'an anime style illustration',
+    watercolor: 'a watercolor painting',
+    cyberpunk: 'a neon-lit cyberpunk scene',
+    surreal: 'a dreamlike surreal depiction'
+  };
+
+  function detectMood(line: string): string[] {
+    const l = line.toLowerCase();
+    const tokens: string[] = [];
+    if (/(night|midnight|moon|stars)/.test(l)) tokens.push('night scene', 'soft rim light');
+    if (/(rain|storm|tears|wet)/.test(l)) tokens.push('rain, wet surfaces, reflections');
+    if (/(fire|burn|flame)/.test(l)) tokens.push('warm glow, embers, particle sparks');
+    if (/(ocean|sea|wave)/.test(l)) tokens.push('ocean mist, wide angle');
+    if (/(city|street|neon|traffic)/.test(l)) tokens.push('urban street, neon lights');
+    if (/(love|heart|kiss|hold)/.test(l)) tokens.push('warm tones, soft focus');
+    if (/(lonely|alone|lost|empty)/.test(l)) tokens.push('moody, low key lighting');
+    return tokens;
+  }
+
+  function normalizeSubject(text: string): string {
+    // Reemplazar pronombres por sujetos visuales neutros
+    let t = ' ' + text + ' ';
+    t = t.replace(/\b(I|me|my|mine)\b/gi, ' a person ');
+    t = t.replace(/\b(you|your|yours)\b/gi, ' a person ');
+    t = t.replace(/\b(we|us|our|ours)\b/gi, ' people ');
+    t = t.replace(/\b(they|them|their|theirs)\b/gi, ' people ');
+    t = t.replace(/\b(he|him|his)\b/gi, ' a man ');
+    t = t.replace(/\b(she|her|hers)\b/gi, ' a woman ');
+    return t.trim().replace(/\s+/g, ' ');
+  }
+
+  function promptify(line: string): string {
+    const base = line.replace(/[\[\](){}<>"'`]+/g, '').trim();
+    const subject = normalizeSubject(base);
+    const mood = detectMood(base).join(', ');
+    const style = styleMap[stylePreset] ?? 'a detailed illustration';
+    const parts = [
+      `${style} of ${subject}`,
+      extraSuffix
+    ];
+    if (mood) parts.push(mood);
+    return parts.filter(Boolean).join(', ');
+  }
+
+  function applyPrompt(line: string) {
+    const built = enablePromptify ? promptify(line) : line;
+    previewPrompt = built;
+    if (mode === 'replace') {
+      pipelineValues.update((v) => ({ ...v, prompt: built }));
+    } else {
+      const current = get(pipelineValues)?.prompt ?? '';
+      const sep = current && !/[,.;]$/.test(current.trim()) ? ', ' : ' ';
+      const next = current ? `${current}${sep}${built}` : built;
+      pipelineValues.update((v) => ({ ...v, prompt: next }));
+    }
+  }
+
   $: if (currentLine) {
-    pipelineValues.update((v) => ({ ...v, prompt: currentLine }));
+    applyPrompt(currentLine);
   }
 
   function parseLRC(lrc: string): Cue[] {
@@ -114,8 +182,37 @@
   </ul>
   <audio bind:this={audioEl} on:timeupdate={onTimeUpdate} on:loadedmetadata={onLoadedMetadata} controls style="width: 100%" />
   <div class="text-sm opacity-80">Línea actual: {currentLine || '—'}</div>
+
+  <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+    <div class="flex items-center gap-3 mb-2">
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" bind:checked={enablePromptify} />
+        Convertir a prompt visual
+      </label>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="radio" name="mode" value="replace" bind:group={mode} /> Reemplazar
+      </label>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="radio" name="mode" value="append" bind:group={mode} /> Agregar
+      </label>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 mb-2">
+      <label class="text-sm">Estilo:</label>
+      <select class="text-sm border rounded px-2 py-1 dark:text-black" bind:value={stylePreset}
+        on:change={() => currentLine && applyPrompt(currentLine)}>
+        <option value="cinematic">Cinematic photo</option>
+        <option value="digital-art">Digital art</option>
+        <option value="anime">Anime</option>
+        <option value="watercolor">Watercolor</option>
+        <option value="cyberpunk">Cyberpunk</option>
+        <option value="surreal">Surreal</option>
+      </select>
+      <input class="flex-1 text-sm border rounded px-2 py-1 dark:text-black" placeholder="Sufijo de calidad (extra)"
+        bind:value={extraSuffix} on:change={() => currentLine && applyPrompt(currentLine)} />
+    </div>
+    <div class="text-xs opacity-80">Preview prompt: {previewPrompt || (enablePromptify ? '—' : currentLine || '—')}</div>
+  </div>
 </div>
 
 <style>
 </style>
-
