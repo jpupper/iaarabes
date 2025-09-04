@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   export let value = 8.0;
   export let params: FieldProps;
+  export let disabled: boolean = false;
   onMount(() => {
     value = Number(params?.default) ?? 8.0;
   });
@@ -11,7 +12,8 @@
 <div class="grid max-w-md grid-cols-4 items-center gap-3">
   <label class="text-sm font-medium" for={params.id}>{params?.title}</label>
   <input
-    class="col-span-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 dark:bg-gray-500"
+    class="col-span-2 h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 dark:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+    {disabled}
     bind:value
     type="range"
     id={params.id}
@@ -24,7 +26,8 @@
     type="number"
     step={params?.step ?? 1}
     bind:value
-    class="rounded-md border px-1 py-1 text-center text-xs font-bold dark:text-black"
+    class="rounded-md border px-1 py-1 text-center text-xs font-bold dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+    {disabled}
   />
 </div>
 <!-- 

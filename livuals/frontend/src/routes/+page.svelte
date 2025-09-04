@@ -3,12 +3,13 @@
   import type { Fields, PipelineInfo } from '$lib/types';
   import { PipelineMode } from '$lib/types';
       import Button from '$lib/components/Button.svelte';
-    import Spinner from '$lib/icons/spinner.svelte';
-import StatusMessages from '$lib/modules/StatusMessages.svelte';
+  import Spinner from '$lib/icons/spinner.svelte';
+  import StatusMessages from '$lib/modules/StatusMessages.svelte';
   import Warning from '$lib/components/Warning.svelte';
   import { lcmLiveStatus, LCMLiveStatus } from '$lib/lcmLive';
-import AIControls from '$lib/modules/AIControls.svelte';
-      import Lyrics from '$lib/modules/Lyrics.svelte';
+  import PipelineControls from '$lib/modules/PipelineControls.svelte';
+  import StreamOutput from '$lib/modules/StreamOutput.svelte';
+  import Lyrics from '$lib/modules/Lyrics.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -124,12 +125,20 @@ import AIControls from '$lib/modules/AIControls.svelte';
 
   {#if pipelineParams}
     <article class="module-container">
-      <!-- AI Controls Module -->
-      <AIControls 
-        {isImageMode} 
-        {pipelineParams} 
-        bind:warningMessage={warningMessage} 
-        disabled={!backendReady} 
+      <!-- Stream Output Module -->
+      <StreamOutput
+        {isImageMode}
+        {pipelineParams}
+        bind:warningMessage={warningMessage}
+        disabled={!backendReady}
+      />
+    </article>
+
+    <article class="module-container">
+      <!-- Pipeline Controls Module -->
+      <PipelineControls
+        {pipelineParams}
+        disabled={!backendReady}
       />
     </article>
 
