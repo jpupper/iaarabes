@@ -7,7 +7,7 @@
   import StatusMessages from '$lib/modules/StatusMessages.svelte';
   import Warning from '$lib/components/Warning.svelte';
   import { lcmLiveStatus, LCMLiveStatus } from '$lib/lcmLive';
-  import PipelineControls from '$lib/modules/PipelineControls.svelte';
+  import AIControls from '$lib/modules/AIControls.svelte';
   import StreamOutput from '$lib/modules/StreamOutput.svelte';
   import Lyrics from '$lib/modules/Lyrics.svelte';
 
@@ -135,8 +135,8 @@
     </article>
 
     <article class="module-container">
-      <!-- Pipeline Controls Module -->
-      <PipelineControls
+      <!-- AI Controls Module -->
+      <AIControls
         {pipelineParams}
         disabled={!backendReady}
       />
