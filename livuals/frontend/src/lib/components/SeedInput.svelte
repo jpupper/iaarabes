@@ -4,6 +4,7 @@
   import Button from './Button.svelte';
   export let value = 299792458;
   export let params: FieldProps;
+  export let disabled: boolean = false;
 
   onMount(() => {
     value = Number(params?.default ?? '');
@@ -20,7 +21,8 @@
     type="number"
     id="seed"
     name="seed"
-    class="col-span-2 rounded-md border border-gray-700 p-2 text-right font-light dark:text-black"
+    class="col-span-2 rounded-md border border-gray-700 p-2 text-right font-light dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+    {disabled}
   />
-  <Button on:click={randomize}>Rand</Button>
+  <Button on:click={randomize} {disabled}>Rand</Button>
 </div>

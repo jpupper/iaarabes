@@ -10,7 +10,7 @@
 </script>
 
 <div class="flex flex-col gap-6 w-full">
-  <h2 class="text-xl font-bold">AI Controls</h2>
+  <h2 class="text-xl font-bold">Pipeline Controls</h2>
 
   <div class="flex flex-col gap-4">
     <PipelineOptions

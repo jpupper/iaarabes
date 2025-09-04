@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   export let value = '';
   export let params: FieldProps;
+  export let disabled: boolean = false;
   onMount(() => {
     value = String(params?.default);
   });
@@ -14,7 +15,8 @@
     <select
       bind:value
       id="model-list"
-      class="cursor-pointer rounded-md border-2 border-gray-500 p-2 font-light dark:text-black"
+      class="cursor-pointer rounded-md border-2 border-gray-500 p-2 font-light dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+      {disabled}
     >
       {#each params.values as model, i}
         <option value={model} selected={i === 0}>{model}</option>

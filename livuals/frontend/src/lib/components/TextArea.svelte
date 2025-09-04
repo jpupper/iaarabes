@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   export let value: string;
   export let params: FieldProps;
+  export let disabled: boolean = false;
   onMount(() => {
     value = String(params?.default ?? '');
   });
@@ -14,7 +15,8 @@
   </label>
   <div class="text-normal flex items-center rounded-md border border-gray-700">
     <textarea
-      class="mx-1 w-full px-3 py-2 font-light outline-none dark:text-black"
+      class="mx-1 w-full px-3 py-2 font-light outline-none dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+      {disabled}
       title={params?.title}
       placeholder="Add your prompt here..."
       bind:value
