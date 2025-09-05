@@ -165,6 +165,33 @@ class Pipeline:
             self._diffusers_pipe.to(device)
             self.ready = True
 
+    def sendSpout(self, image):
+        """Enviar imagen a Spout"""
+        if not isinstance(image, Image.Image):
+            return
+            
+        # Hacer una copia para Spout para no modificar la original
+        spout_image = image.copy()
+        
+        # Asegurar el tamaño correcto
+        if spout_image.size != (self.spout_width, self.spout_height):
+            spout_image = spout_image.resize((self.spout_width, self.spout_height))
+        
+        # Convertir a array numpy
+        img_array = np.array(spout_image)
+        
+        # Crear array BGRA
+        bgra = np.zeros((self.spout_height, self.spout_width, 4), dtype=np.int32)
+        
+        # Reordenar canales RGB -> BGR y asignar alpha
+        bgra[..., 2] = img_array[..., 2]  # B
+        bgra[..., 1] = img_array[..., 1]  # G
+        bgra[..., 0] = img_array[..., 0]  # R
+        bgra[..., 3] = 255              # Alpha opaco
+        
+        # Enviar a Spout sin flip
+        self.spout_sender.send_image(bgra, False)
+        
     def blend_frames(self, frame1, frame2, alpha):
         """Blend two frames using alpha blending"""
         try:
@@ -196,7 +223,9 @@ class Pipeline:
             if hasattr(self, "stream") and self.device.type == "cuda":
                 image_tensor = self.stream.preprocess_image(params.image)
                 if isinstance(image_tensor, torch.Tensor):
-                    image_tensor = torch.clamp(image_tensor, 0, 1)
+                    # Ajustar brillo en el tensor de entrada
+                    image_tensor = torch.clamp(image_tensor * 1.8, 0, 1)
+                    image_tensor *=2.+.2;
                 current_output = self.stream(image=image_tensor, prompt=params.prompt)
             else:
                 assert self._diffusers_pipe is not None
@@ -248,28 +277,7 @@ class Pipeline:
             # Enviar a Spout si está disponible
             if self.spout_sender is not None:
                 try:
-                    # Convertir la imagen PIL a numpy array
-                    if isinstance(current_output, Image.Image):
-                        # Hacer una copia para Spout para no modificar la original
-                        spout_image = current_output.copy()
-                        
-                        # Asegurar el tamaño correcto
-                        if spout_image.size != (self.spout_width, self.spout_height):
-                            spout_image = spout_image.resize((self.spout_width, self.spout_height))
-                        
-                        # Convertir a array numpy manteniendo los negros
-                        img_array = np.array(spout_image)
-                        
-                        # Crear array BGRA con los canales en el orden correcto
-                        bgra = np.zeros((self.spout_height, self.spout_width, 4), dtype=np.int32)
-                        # Copiar canales RGB a BGR preservando los valores
-                        for i in range(3):
-                            bgra[..., i] = img_array[..., i].clip(0, 255)
-                        # Alpha siempre opaco
-                        bgra[..., 3] = 255
-                        
-                        # Enviar a Spout
-                        self.spout_sender.send_image(bgra, False)
+                    self.sendSpout(current_output)
                 except Exception as e:
                     print(f"Warning: Failed to send to Spout: {e}")
             
