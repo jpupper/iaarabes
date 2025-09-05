@@ -69,22 +69,23 @@ REM 12. Instalar PySpout y OpenGL
 cd ..
 pip install PyOpenGL==3.1.7
 
-REM Crear directorio para PySpout
-mkdir pyspout 2>nul
-cd pyspout
+REM Asegurar que el directorio site-packages existe
+if not exist StreamDiffusion\venv\Lib\site-packages mkdir StreamDiffusion\venv\Lib\site-packages
 
-REM Descargar archivos precompilados de PySpout
-powershell -Command "(New-Object Net.WebClient).DownloadFile('https://github.com/Off-World-Live/pyspout/raw/master/Spout2/Binaries/x64/Spout.dll', 'Spout.dll')"
-powershell -Command "(New-Object Net.WebClient).DownloadFile('https://github.com/Off-World-Live/pyspout/raw/master/x64/Release/PySpout.pyd', 'PySpout.pyd')"
+REM Copiar archivos de Spout desde dependencies al venv
+copy dependencies\Spout.dll StreamDiffusion\venv\Lib\site-packages\
+copy dependencies\PySpout.pyd StreamDiffusion\venv\Lib\site-packages\
 
-REM Crear setup.py básico
-echo import setuptools > setup.py
-echo setuptools.setup(name='pyspout', packages=['']) >> setup.py
+REM Verificar que los archivos se copiaron correctamente
+if not exist StreamDiffusion\venv\Lib\site-packages\Spout.dll (
+    echo Error: No se pudo copiar Spout.dll
+    exit /b 1
+)
+if not exist StreamDiffusion\venv\Lib\site-packages\PySpout.pyd (
+    echo Error: No se pudo copiar PySpout.pyd
+    exit /b 1
+)
 
-REM Instalar PySpout
-pip install -e .
-
-cd ..
 cd StreamDiffusion
 
 
