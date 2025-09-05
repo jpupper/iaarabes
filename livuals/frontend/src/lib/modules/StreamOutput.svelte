@@ -5,6 +5,8 @@
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
+  import Checkbox from '$lib/components/Checkbox.svelte';
+  import { FieldType } from '$lib/types';
   
   export let isImageMode: boolean = false;
   export let pipelineParams: any;
@@ -12,6 +14,7 @@
   export let disabled: boolean = false;
   
   let internalDisabled = false;
+  let enableSpout = true;
   
   $: isLCMRunning = $lcmLiveStatus !== LCMLiveStatus.DISCONNECTED;
   $: if ($lcmLiveStatus === LCMLiveStatus.TIMEOUT) {
@@ -19,10 +22,14 @@
   }
   
   function getSreamdata() {
+    const pipelineValues = getPipelineValues();
+    // Add enableSpout to the pipeline values
+    pipelineValues.enableSpout = enableSpout;
+    
     if (isImageMode) {
-      return [getPipelineValues(), $onFrameChangeStore?.blob];
+      return [pipelineValues, $onFrameChangeStore?.blob];
     } else {
-      return [getPipelineValues()];
+      return [pipelineValues];
     }
   }
   
@@ -96,16 +103,21 @@
     </div>
   </div>
   
-  <div class="flex gap-3">
-    <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
-      {#if isLCMRunning}
-        Stop
-      {:else}
-        Start
-      {/if}
-    </Button>
-    <Button on:click={snapshotOnce} classList={'text-lg p-3 bg-blue-600 text-white hover:bg-blue-700'}>
-      Snapshot
-    </Button>
+  <div class="flex flex-col gap-3">
+    <div class="flex gap-3">
+      <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
+        {#if isLCMRunning}
+          Stop
+        {:else}
+          Start
+        {/if}
+      </Button>
+      <Button on:click={snapshotOnce} classList={'text-lg p-3 bg-blue-600 text-white hover:bg-blue-700'}>
+        Snapshot
+      </Button>
+    </div>
+    <div class="flex items-center gap-2">
+      <Checkbox bind:value={enableSpout} params={{ id: 'enableSpout', title: 'Enable Spout Output', default: '1', field: FieldType.CHECKBOX }} />
+    </div>
   </div>
 </div>
