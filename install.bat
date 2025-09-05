@@ -3,12 +3,18 @@ REM ================================
 REM Script de instalación StreamDiffusion con venv
 REM ================================
 
+set CLEANINSTALL=false
+if "%1"=="clean" set CLEANINSTALL=true
 
-REM 0. Limpiando instalaciones previas...
-deactivate 2>nul
-rd /s /q .venv 2>nul
+echo Modo de instalacion: %CLEANINSTALL%
+echo.
 
-
+REM Manejar venv
+if "%CLEANINSTALL%"=="true" (
+    echo Realizando instalación limpia...
+    deactivate 2>nul
+    rd /s /q venv 2>nul
+)
 
 REM 1. Verificar Python 3.10.9
 for /f "tokens=2" %%I in ('python -V 2^>^&1') do set PYTHON_VERSION=%%I
@@ -58,6 +64,28 @@ pip install -e .
 
 REM 9. Instalar dependencias extra (FastAPI y relacionados)
 pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 websockets==15.0.1 markdown2==2.5.4 python-multipart==0.0.20 pydantic==1.10.14 polygraphy==0.49.26
+
+REM 12. Instalar PySpout y OpenGL
+cd ..
+pip install PyOpenGL==3.1.7
+
+REM Crear directorio para PySpout
+mkdir pyspout 2>nul
+cd pyspout
+
+REM Descargar archivos precompilados de PySpout
+powershell -Command "(New-Object Net.WebClient).DownloadFile('https://github.com/Off-World-Live/pyspout/raw/master/Spout2/Binaries/x64/Spout.dll', 'Spout.dll')"
+powershell -Command "(New-Object Net.WebClient).DownloadFile('https://github.com/Off-World-Live/pyspout/raw/master/x64/Release/PySpout.pyd', 'PySpout.pyd')"
+
+REM Crear setup.py básico
+echo import setuptools > setup.py
+echo setuptools.setup(name='pyspout', packages=['']) >> setup.py
+
+REM Instalar PySpout
+pip install -e .
+
+cd ..
+cd StreamDiffusion
 
 
 REM 10. Instalar TensorRT
