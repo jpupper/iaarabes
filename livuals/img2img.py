@@ -1,5 +1,6 @@
 import sys
 import os
+import platform
 
 sys.path.append(
     os.path.join(
@@ -10,8 +11,20 @@ sys.path.append(
 )
 
 from utils.wrapper import StreamDiffusionWrapper
-from PySpout import SpoutSender
-from OpenGL.GL import GL_RGBA
+
+# Verificar si estamos en Windows para importar PySpout
+IS_WINDOWS = platform.system() == 'Windows'
+if IS_WINDOWS:
+    try:
+        from PySpout import SpoutSender
+        from OpenGL.GL import GL_RGBA
+        SPOUT_AVAILABLE = True
+    except ImportError:
+        print("PySpout no está disponible, la salida Spout estará desactivada")
+        SPOUT_AVAILABLE = False
+else:
+    print("Sistema no Windows detectado, la salida Spout estará desactivada")
+    SPOUT_AVAILABLE = False
 
 import torch
 import numpy as np
@@ -113,15 +126,17 @@ class Pipeline:
         self.old_steps_config = None
         self.transition_frames = 10
         
-        # Inicializar Spout
-        try:
-            # Inicializar Spout con las dimensiones exactas
-            self.spout_width = params.width
-            self.spout_height = params.height
-            self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
-        except Exception as e:
-            print(f"Warning: Could not initialize Spout: {e}")
-            self.spout_sender = None
+        # Inicializar Spout solo en Windows
+        self.spout_sender = None
+        if SPOUT_AVAILABLE:
+            try:
+                # Inicializar Spout con las dimensiones exactas
+                self.spout_width = params.width
+                self.spout_height = params.height
+                self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
+            except Exception as e:
+                print(f"Warning: Could not initialize Spout: {e}")
+                self.spout_sender = None
 
         if device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -167,6 +182,10 @@ class Pipeline:
 
     def sendSpout(self, image):
         """Enviar imagen a Spout"""
+        # Si no estamos en Windows o Spout no está disponible, no hacer nada
+        if not SPOUT_AVAILABLE or self.spout_sender is None:
+            return
+            
         if not isinstance(image, Image.Image):
             return
             
@@ -274,8 +293,8 @@ class Pipeline:
             # Store last valid image and send to Spout if available
             self.last_valid_image = current_output
             
-            # Enviar a Spout si está disponible
-            if self.spout_sender is not None:
+            # Enviar a Spout si está disponible, estamos en Windows y está habilitado
+            if SPOUT_AVAILABLE and self.spout_sender is not None and getattr(params, 'enableSpout', True):
                 try:
                     self.sendSpout(current_output)
                 except Exception as e:

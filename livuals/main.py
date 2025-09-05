@@ -96,8 +96,15 @@ class App:
                         params = await self.conn_manager.receive_json(user_id)
                         if not params:
                             return
+                        # Extract enableSpout before converting to InputParams
+                        enable_spout = params.get('enableSpout', True)
+                        # Remove enableSpout from params to avoid validation errors
+                        if 'enableSpout' in params:
+                            del params['enableSpout']
                         params = pipeline.InputParams(**params)
                         params = SimpleNamespace(**params.dict())
+                        # Add enableSpout back to params
+                        params.enableSpout = enable_spout
                         if info.input_mode == "image":
                             image_data = await self.conn_manager.receive_bytes(user_id)
                             if len(image_data) == 0:
