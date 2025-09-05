@@ -10,6 +10,8 @@ sys.path.append(
 )
 
 from utils.wrapper import StreamDiffusionWrapper
+from PySpout import SpoutSender
+from OpenGL.GL import GL_RGBA
 
 import torch
 import numpy as np
@@ -110,6 +112,21 @@ class Pipeline:
         self.transition_progress = 0.0
         self.old_steps_config = None
         self.transition_frames = 10
+        
+        # Inicializar Spout
+        try:
+            # Asegurar que las dimensiones sean correctas para Spout
+            self.spout_width = params.width
+            self.spout_height = params.height
+            print(f"[Spout Debug] Initializing Spout with size: {self.spout_width}x{self.spout_height}")
+            # Asegurar que las dimensiones sean múltiplos de 2 para compatibilidad
+            self.spout_width = (self.spout_width + 1) & ~1
+            self.spout_height = (self.spout_height + 1) & ~1
+            print(f"[Spout Debug] Adjusted size to: {self.spout_width}x{self.spout_height}")
+            self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
+        except Exception as e:
+            print(f"Warning: Could not initialize Spout: {e}")
+            self.spout_sender = None
 
         if device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -230,8 +247,46 @@ class Pipeline:
                 
                 return output_image
             
-            # Store last valid image and return current output
+            # Store last valid image and send to Spout if available
             self.last_valid_image = current_output
+            
+            # Enviar a Spout si está disponible
+            if self.spout_sender is not None:
+                try:
+                    # Convertir la imagen PIL a numpy array
+                    if isinstance(current_output, Image.Image):
+                        print(f"[Spout Debug] Original image size: {current_output.size}, mode: {current_output.mode}")
+                        
+                        # Hacer una copia para Spout para no modificar la original
+                        spout_image = current_output.copy()
+                        
+                        # Primero asegurar el tamaño correcto
+                        if spout_image.size != (self.spout_width, self.spout_height):
+                            spout_image = spout_image.resize((self.spout_width, self.spout_height))
+                            print(f"[Spout Debug] Resized to: {spout_image.size}")
+                        
+                        # Convertir a RGBA si es necesario
+                        if spout_image.mode != 'RGBA':
+                            spout_image = spout_image.convert('RGBA')
+                            print(f"[Spout Debug] Converted to mode: {spout_image.mode}")
+                        
+                        # Convertir a array numpy y reordenar canales a BGRA
+                        img_array = np.array(spout_image)
+                        print(f"[Spout Debug] Numpy array shape: {img_array.shape}, dtype: {img_array.dtype}")
+                        
+                        # Reordenar de RGBA a BGRA
+                        img_array = img_array[:, :, [2,1,0,3]]
+                        
+                        # Convertir a int32 para Spout
+                        img_array = img_array.astype(np.int32)
+                        print(f"[Spout Debug] Final array shape: {img_array.shape}, dtype: {img_array.dtype}")
+                        
+                        # Intentar enviar a Spout con flip=False
+                        success = self.spout_sender.send_image(img_array, False)
+                        print(f"[Spout Debug] Send result: {success}")
+                except Exception as e:
+                    print(f"Warning: Failed to send to Spout: {e}")
+            
             return current_output
             
         finally:
