@@ -21,8 +21,6 @@ for /f "tokens=2" %%I in ('python -V 2^>^&1') do set PYTHON_VERSION=%%I
 if not "%PYTHON_VERSION%"=="3.10.9" (
     echo Se requiere Python 3.10.9 exactamente. Version actual: %PYTHON_VERSION%
     echo Por favor instale Python 3.10.9 desde https://www.python.org/downloads/release/python-3109/
-    pause
-    exit /b 1
 )
 
 REM 2. Clonar el repositorio
