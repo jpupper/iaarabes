@@ -1,32 +1,48 @@
 <script lang="ts">
-  import { mediaDevices, mediaStreamActions } from '$lib/mediaStream';
+  import { mediaDevices, mediaStreamActions, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
   import { onMount, createEventDispatcher } from 'svelte';
   
   const dispatch = createEventDispatcher();
 
+  export let selectedDeviceId: string | null = null;
   let deviceId: string = '';
   let isDropdownOpen = false;
+  let isActive = false;
 
   onMount(async () => {
     await mediaStreamActions.enumerateDevices();
     if ($mediaDevices && $mediaDevices.length > 0) {
       deviceId = $mediaDevices[0].deviceId;
+      if (!selectedDeviceId) {
+        selectedDeviceId = deviceId;
+        dispatch('cameraSelected', { deviceId });
+      }
     }
   });
 
   function switchCamera(newDeviceId: string) {
     deviceId = newDeviceId;
+    selectedDeviceId = newDeviceId;
     mediaStreamActions.switchCamera(deviceId);
+    isActive = true;
     dispatch('cameraSelected', { deviceId: newDeviceId });
   }
 
   export function startCamera() {
     mediaStreamActions.start(deviceId);
+    isActive = true;
+    selectedDeviceId = deviceId;
+    dispatch('cameraSelected', { deviceId });
   }
 
   export function stopCamera() {
     mediaStreamActions.stop();
+    isActive = false;
+    selectedDeviceId = null;
+    dispatch('cameraDeselected');
   }
+  
+  $: isActive = selectedDeviceId === deviceId;
 </script>
 
 

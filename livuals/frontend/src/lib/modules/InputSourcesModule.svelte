@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { mediaDevices, mediaStreamActions, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
-  import Screen from '$lib/icons/screen.svelte';
   import { onMount } from 'svelte';
   import CamInput from './InputSources/CamInput.svelte';
   import ShareInput from './InputSources/ShareInput.svelte';
@@ -14,24 +12,31 @@
     description: string;
   };
 
-  let deviceId: string = '';
   let selectedSourceId: string | null = null;
+  let isScreenActive = false;
   
-  onMount(async () => {
-    await mediaStreamActions.enumerateDevices();
-    if ($mediaDevices && $mediaDevices.length > 0) {
-      deviceId = $mediaDevices[0].deviceId;
-      selectedSourceId = deviceId;
+  function handleCameraSelected(event: CustomEvent<{deviceId: string}>) {
+    selectedSourceId = event.detail.deviceId;
+    if (isScreenActive) {
+      isScreenActive = false;
     }
-  });
-
-  function handleSourceSelect(sourceId: string) {
-    selectedSourceId = sourceId;
-    if (sourceId === 'screen') {
-      mediaStreamActions.startScreenCapture();
-    } else {
-      deviceId = sourceId;
-      mediaStreamActions.switchCamera(deviceId);
+  }
+  
+  function handleCameraDeselected() {
+    if (selectedSourceId !== 'screen') {
+      selectedSourceId = null;
+    }
+  }
+  
+  function handleScreenSelected() {
+    selectedSourceId = 'screen';
+    isScreenActive = true;
+  }
+  
+  function handleScreenDeselected() {
+    if (selectedSourceId === 'screen') {
+      selectedSourceId = null;
+      isScreenActive = false;
     }
   }
 
@@ -45,18 +50,15 @@
         type: 'screen' as const,
         description: 'Share your screen'
       };
-    } else if (selectedSourceId && $mediaDevices) {
-      const device = $mediaDevices.find(d => d.deviceId === selectedSourceId);
-      if (device) {
-        return {
-          id: device.deviceId,
-          name: device.label || 'Camera',
-          resolution: '1920x1080',
-          fps: '30fps',
-          type: 'camera' as const,
-          description: device.label || 'USB Camera'
-        };
-      }
+    } else if (selectedSourceId) {
+      return {
+        id: selectedSourceId,
+        name: 'Camera',
+        resolution: '1920x1080',
+        fps: '30fps',
+        type: 'camera' as const,
+        description: 'Camera'
+      };
     }
     return null;
   }
@@ -67,36 +69,19 @@
   <div class="space-y-4">
     <!-- Componente de cámara con dropdown -->
     <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId && selectedSourceId !== 'screen' ? 'border-green-500 bg-green-50' : ''}">
-      <CamInput on:cameraSelected={(e) => handleSourceSelect(e.detail.deviceId)} />
+      <CamInput 
+        selectedDeviceId={selectedSourceId !== 'screen' ? selectedSourceId : null}
+        on:cameraSelected={handleCameraSelected}
+        on:cameraDeselected={handleCameraDeselected}
+      />
     </div>
 
     <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50' : ''}">
-      <div class="w-full flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="text-xl">
-            🖥️
-          </div>
-          <div class="text-left">
-            <div class="font-medium text-black">Screen Share</div>
-            <div class="text-sm text-gray-600">
-              Desktop • 60fps
-            </div>
-          </div>
-        </div>
-        <button 
-          class="flex items-center gap-1 px-3 py-1 text-sm bg-white text-black rounded-md hover:bg-gray-100 border border-gray-300"
-          on:click={() => {
-            if (selectedSourceId === 'screen') {
-              mediaStreamActions.stop();
-              selectedSourceId = null;
-            } else {
-              handleSourceSelect('screen');
-            }
-          }}
-        >
-          {selectedSourceId === 'screen' ? 'Detener' : 'Iniciar'}
-        </button>
-      </div>
+      <ShareInput 
+        isActive={isScreenActive}
+        on:screenSelected={handleScreenSelected}
+        on:screenDeselected={handleScreenDeselected}
+      />
     </div>
   </div>
 </div>
