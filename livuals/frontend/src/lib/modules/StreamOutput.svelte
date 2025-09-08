@@ -1,6 +1,7 @@
 <script lang="ts">
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
+  import { selectedInputSource } from '$lib/store';
   import { getPipelineValues } from '$lib/store';
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
@@ -9,6 +10,14 @@
   import { FieldType } from '$lib/types';
   
   export let isImageMode: boolean = false;
+  
+  // Determinar si estamos en modo imagen basado en la fuente seleccionada
+  $: {
+    const sourceType = $selectedInputSource?.type;
+    if (sourceType === 'iframe' || sourceType === 'youtube') {
+      isImageMode = true;
+    }
+  }
   export let pipelineParams: any;
   export let warningMessage: string = '';
   export let disabled: boolean = false;
@@ -36,7 +45,10 @@
   async function toggleLcmLive() {
     try {
       if (!isLCMRunning) {
-        if (isImageMode) {
+        const sourceType = $selectedInputSource?.type;
+        
+        // Solo iniciar mediaStream para cámara o pantalla compartida
+        if (isImageMode && (sourceType !== 'iframe' && sourceType !== 'youtube')) {
           await mediaStreamActions.enumerateDevices();
           await mediaStreamActions.start();
         }
