@@ -30,7 +30,7 @@
 </script>
 
 
-<div class="w-full flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-800 mt-2">
+<div class="w-full flex items-center justify-between">
   <div class="flex items-center gap-3">
     <div class="text-xl">
       📷
@@ -39,8 +39,8 @@
       {#if $mediaDevices && $mediaDevices.length > 0}
         {#if deviceId}
           {@const currentDevice = $mediaDevices.find(d => d.deviceId === deviceId)}
-          <div class="font-medium">{currentDevice?.label || 'Camera'}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-400">
+          <div class="font-medium text-black">{currentDevice?.label || 'Camera'}</div>
+          <div class="text-sm text-gray-600">
             1920x1080 • 30fps
           </div>
         {/if}

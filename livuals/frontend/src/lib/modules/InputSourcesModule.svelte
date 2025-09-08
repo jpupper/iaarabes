@@ -3,6 +3,7 @@
   import Screen from '$lib/icons/screen.svelte';
   import { onMount } from 'svelte';
   import CamInput from './InputSources/CamInput.svelte';
+  import ShareInput from './InputSources/ShareInput.svelte';
 
   type InputSource = {
     id: string;
@@ -69,26 +70,33 @@
       <CamInput on:cameraSelected={(e) => handleSourceSelect(e.detail.deviceId)} />
     </div>
 
-    <button
-      class="w-full flex items-center justify-between p-4 rounded-lg border {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}"
-      on:click={() => handleSourceSelect('screen')}
-    >
-      <div class="flex items-center gap-3">
-        <div class="text-xl">
-          🖥️
-        </div>
-        <div class="text-left">
-          <div class="font-medium text-black">Screen Share</div>
-          <div class="text-sm text-gray-600">
-            Desktop • 60fps
-            <br />
-            Share your screen
+    <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50' : ''}">
+      <div class="w-full flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="text-xl">
+            🖥️
+          </div>
+          <div class="text-left">
+            <div class="font-medium text-black">Screen Share</div>
+            <div class="text-sm text-gray-600">
+              Desktop • 60fps
+            </div>
           </div>
         </div>
+        <button 
+          class="flex items-center gap-1 px-3 py-1 text-sm bg-white text-black rounded-md hover:bg-gray-100 border border-gray-300"
+          on:click={() => {
+            if (selectedSourceId === 'screen') {
+              mediaStreamActions.stop();
+              selectedSourceId = null;
+            } else {
+              handleSourceSelect('screen');
+            }
+          }}
+        >
+          {selectedSourceId === 'screen' ? 'Detener' : 'Iniciar'}
+        </button>
       </div>
-      <button class="text-gray-400 hover:text-gray-600">
-        ⚙️
-      </button>
-    </button>
+    </div>
   </div>
 </div>
