@@ -14,8 +14,10 @@
   // Determinar si estamos en modo imagen basado en la fuente seleccionada
   $: {
     const sourceType = $selectedInputSource?.type;
-    if (sourceType === 'iframe' || sourceType === 'youtube') {
+    if (sourceType === 'camera' || sourceType === 'screen' || sourceType === 'iframe' || sourceType === 'youtube') {
       isImageMode = true;
+    } else {
+      isImageMode = false;
     }
   }
   export let pipelineParams: any;
@@ -35,8 +37,9 @@
     // Add enableSpout to the pipeline values
     pipelineValues.enableSpout = enableSpout;
     
-    if (isImageMode) {
-      return [pipelineValues, $onFrameChangeStore?.blob];
+    // Siempre enviar el blob si está disponible, independientemente del modo
+    if ($onFrameChangeStore?.blob) {
+      return [pipelineValues, $onFrameChangeStore.blob];
     } else {
       return [pipelineValues];
     }
