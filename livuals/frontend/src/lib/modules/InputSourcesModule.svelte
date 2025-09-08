@@ -61,16 +61,16 @@
   }
 </script>
 
-<div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+<div class="bg-white border border-gray-200 rounded-lg p-4">
 
   <div class="space-y-4">
     <!-- Componente de cámara con dropdown -->
-    <div class="border border-gray-200 dark:border-gray-800 rounded-lg p-4 {selectedSourceId && selectedSourceId !== 'screen' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : ''}">
+    <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId && selectedSourceId !== 'screen' ? 'border-green-500 bg-green-50' : ''}">
       <CamInput on:cameraSelected={(e) => handleSourceSelect(e.detail.deviceId)} />
     </div>
 
     <button
-      class="w-full flex items-center justify-between p-4 rounded-lg border {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50'}"
+      class="w-full flex items-center justify-between p-4 rounded-lg border {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}"
       on:click={() => handleSourceSelect('screen')}
     >
       <div class="flex items-center gap-3">
@@ -78,15 +78,15 @@
           🖥️
         </div>
         <div class="text-left">
-          <div class="font-medium">Screen Share</div>
-          <div class="text-sm text-gray-600 dark:text-gray-400">
+          <div class="font-medium text-black">Screen Share</div>
+          <div class="text-sm text-gray-600">
             Desktop • 60fps
             <br />
             Share your screen
           </div>
         </div>
       </div>
-      <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+      <button class="text-gray-400 hover:text-gray-600">
         ⚙️
       </button>
     </button>
