@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Livuals",
+  "version": "0.1.0",
+  "identifier": "com.livuals.desktop",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Livuals",
+        "width": 1280,
+        "height": 800,
+        "visible": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "msi"],
+    "resources": [
+      "./resources",
+      "../../dependencies",
+      "../../livuals"
+    ]
+  }
+}

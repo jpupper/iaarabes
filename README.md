@@ -6,6 +6,48 @@
 - Node.js 18+ y npm para compilar el frontend
 - Git
 
+## Wrapper de Escritorio (Tauri)
+
+Opcionalmente podés usar la app nativa (macOS/Windows) sin abrir el navegador. Este wrapper inicia tu backend y abre la UI en una ventana nativa.
+
+Requisitos adicionales:
+- Rust + Cargo
+- Tauri CLI: `cargo install tauri-cli`
+- Windows: WebView2 Runtime (generalmente ya instalado)
+
+Cómo usarlo:
+1) Asegúrate de haber instalado el backend primero (ver secciones Windows/macOS más abajo).
+2) Desde la carpeta `iaarabes/`, ejecutá:
+
+```
+cd desktop
+cargo tauri dev
+```
+
+Esto:
+- Lanza el backend usando los scripts de `iaarabes/`
+- Espera a que el server esté listo en `http://127.0.0.1:7860`
+- Abre una ventana nativa cargando esa URL
+
+Build (instaladores):
+
+```
+cd desktop
+cargo tauri build
+```
+
+Notas:
+- El wrapper exporta `HOST=127.0.0.1` y `PORT=7860` para que el server no se exponga a la red.
+- Si necesitás otro puerto, definí `PORT` en el entorno antes de ejecutar `cargo tauri dev`.
+- El wrapper no incluye PyTorch ni dependencias del backend; se espera que `install.bat`/`install_macos.sh` ya hayan sido ejecutados en ese equipo.
+
+### Primer uso en una máquina nueva
+- El ejecutable creado (.app/.msi) incluye los scripts de instalación.
+- Si al iniciar la app no existe el venv (`StreamDiffusion/venv`), el wrapper ejecuta automáticamente el instalador:
+  - macOS: `install_macos.sh` (requiere CLT de Xcode; puede tardar varios minutos)
+  - Windows: `install.bat` (requiere Python 3.10.9 en PATH)
+- Tras la instalación, el backend se iniciará y la UI se abrirá en la ventana nativa.
+
 ## Windows
 
 ### Instalación
@@ -22,6 +64,20 @@ install.bat
 
 ```
 runlivuals.bat
+```
+
+2) O bien usar la app de escritorio (requiere pasos del wrapper):
+
+```
+cd desktop
+cargo tauri dev
+```
+
+3) Generar instalador:
+
+```
+cd desktop
+cargo tauri build
 ```
 
 ## macOS
@@ -42,6 +98,20 @@ chmod +x install_macos.sh
 ```
 chmod +x runlivuals_macos.sh
 ./runlivuals_macos.sh
+```
+
+2) O bien usar la app de escritorio (requiere pasos del wrapper):
+
+```
+cd desktop
+cargo tauri dev
+```
+
+3) Generar .app/.dmg:
+
+```
+cd desktop
+cargo tauri build
 ```
 
 ## Notas

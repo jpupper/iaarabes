@@ -7,6 +7,31 @@ npm-debug.log
 yarn-debug.log
 yarn-error.log
 
+# Python
+__pycache__/
+*.py[cod]
+
+# Node / Frontend
+node_modules/
+**/.svelte-kit/
+**/dist/
+**/build/
+**/.vite/
+**/.vercel/
+**/.next/
+**/public/_app/
+
+# Rust / Tauri
+**/target/
+**/bundle/
+desktop/src-tauri/target/
+
+# App bundles
+*.app
+*.dmg
+*.msi
+*.exe
+
 # Environment variables
 .env
 .env.local
@@ -29,6 +54,7 @@ public/imagenes/**/*.webp
 # Logs
 logs
 *.log
+**/*.log
 
 # Runtime data
 pids
