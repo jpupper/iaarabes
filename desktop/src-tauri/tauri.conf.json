@@ -21,6 +21,9 @@
   "bundle": {
     "active": true,
     "targets": ["app", "msi"],
+    "icon": [
+      "icons/icon.ico"
+    ],
     "resources": [
       "./resources",
       "../../dependencies",
