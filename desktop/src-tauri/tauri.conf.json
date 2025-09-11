@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.livuals.desktop",
   "build": {
-    "beforeDevCommand": "node scripts/prepare-resources.js",
-    "beforeBuildCommand": "node scripts/prepare-resources.js"
+    "beforeDevCommand": "node src-tauri/scripts/prepare-resources.js",
+    "beforeBuildCommand": "node src-tauri/scripts/prepare-resources.js"
   },
   "app": {
     "windows": [
@@ -14,7 +14,7 @@
         "title": "Livuals",
         "width": 1280,
         "height": 800,
-        "visible": false
+        "visible": true
       }
     ]
   },

@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.module-container {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 3px solid black;
+    margin-bottom: 1.5rem;
+}
+
+.dark .module-container {
+    background-color: black;
+    border-color: white;
+}
+
+.main-layout {
+    width: 100%;
+    max-width: 64rem;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dark .main-layout {
+    background-color: black;
+}
+
+#page_content {
+    color: green;
+}

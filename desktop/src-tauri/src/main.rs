@@ -74,7 +74,20 @@ fn find_ia_root_with(resource_dir: Option<&Path>) -> PathBuf {
         }
     }
 
-    // First, prefer a base that has both scripts and livuals
+    // First, prefer a base that has both scripts and livuals AND already has the venv
+    // This ensures that during `cargo tauri dev` we pick the project checkout (with venv)
+    // instead of the bundled Resources copy (which may not include the venv).
+    for base in &candidates {
+        if has_scripts(base) && has_livuals(base) && venv_exists(base) {
+            return base.clone();
+        }
+        let nested = base.join("iaarabes");
+        if has_scripts(&nested) && has_livuals(&nested) && venv_exists(&nested) { return nested; }
+        let nested2 = base.join("resources");
+        if has_scripts(&nested2) && has_livuals(&nested2) && venv_exists(&nested2) { return nested2; }
+    }
+
+    // Next, prefer a base that has both scripts and livuals
     for base in &candidates {
         if has_scripts(base) && has_livuals(base) {
             return base.clone();
@@ -279,7 +292,7 @@ fn main() {
                 }
 
                 // Wait for server and then load URL in the main window
-                let ready = wait_until_ready(120);
+                let ready = wait_until_ready(600);
                 if ready {
                     append_log("[Livuals] Backend is ready. Showing window...");
                     if let Some(win) = app_handle.get_webview_window("main") {
