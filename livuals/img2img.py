@@ -131,12 +131,12 @@ class Pipeline:
         self.spout_sender = None
         self.spout_width = params.width
         self.spout_height = params.height
-        self.initialize_spout()
+        self.initspout()
 
         # Inicializar StreamDiffusion
-        self.inicializar_streamdiffusion(params)
+        self.initstreamdiffusion(params)
         
-    def inicializar_streamdiffusion(self, params):
+    def initstreamdiffusion(self, params):
         """Inicializa o reinicializa StreamDiffusion con los parámetros actuales"""
         if self.device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -197,17 +197,47 @@ class Pipeline:
         if resolucion_cambiada:
             print(f"Resolución cambiada de {old_width}x{old_height} a {self.spout_width}x{self.spout_height}")
             
+            # Cerrar completamente Spout antes de reinicializarlo
+            self.close_spout()
+            
             # Reinicializar Spout con las nuevas dimensiones
-            self.initialize_spout()
+            self.initspout()
             
             # Reinicializar StreamDiffusion con las nuevas dimensiones
             if hasattr(self, 'stream'):
                 print("Reinicializando StreamDiffusion con nueva resolución...")
-                self.inicializar_streamdiffusion(params)
+                self.initstreamdiffusion(params)
             
         return resolucion_cambiada
+        
+    def close_spout(self):
+        """Cierra completamente el SpoutSender y libera recursos"""
+        if not SPOUT_AVAILABLE:
+            return
+            
+        if self.spout_sender is not None:
+            print("Cerrando SpoutSender...")
+            try:
+                # Intentar liberar el SpoutSender
+                self.spout_sender.release()
+                print("SpoutSender liberado correctamente")
+            except Exception as e:
+                print(f"Error al liberar SpoutSender: {e}")
+            finally:
+                # Asegurarse de que el SpoutSender se establezca a None
+                self.spout_sender = None
+                
+                # Resetear las dimensiones actuales
+                if hasattr(self, 'spout_width_current'):
+                    delattr(self, 'spout_width_current')
+                if hasattr(self, 'spout_height_current'):
+                    delattr(self, 'spout_height_current')
+                    
+                # Pequeña pausa para asegurar que los recursos se liberen completamente
+                import time
+                time.sleep(0.5)
 
-    def initialize_spout(self):
+    def initspout(self):
         """Inicializa el emisor Spout con las dimensiones actuales
         Si ya existe un SpoutSender, verifica si la resolución cambió.
         Si cambió, libera el anterior y crea uno nuevo.
@@ -227,12 +257,28 @@ class Pipeline:
                 # Si la resolución cambió, liberar el SpoutSender existente
                 print(f"Resolución cambiada de {getattr(self, 'spout_width_current', 'N/A')}x{getattr(self, 'spout_height_current', 'N/A')} a {self.spout_width}x{self.spout_height}")
                 print("Liberando SpoutSender anterior...")
-                self.spout_sender.release()
-                self.spout_sender = None
+                
+                try:
+                    # Intentar liberar el SpoutSender con manejo de excepciones
+                    self.spout_sender.release()
+                except Exception as e:
+                    print(f"Error al liberar SpoutSender: {e}")
+                finally:
+                    # Asegurarse de que el SpoutSender se establezca a None
+                    self.spout_sender = None
+                    
+                # Pequeña pausa para asegurar que los recursos se liberen completamente
+                import time
+                time.sleep(0.5)
             
             # Inicializar Spout con las dimensiones actuales
             print(f"Inicializando SpoutSender con resolución {self.spout_width}x{self.spout_height}")
-            self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
+            
+            # Crear un nuevo SpoutSender con un nombre único basado en timestamp
+            import time
+            spout_name = f"LivualsOutput_{int(time.time())}"  # Nombre único para evitar conflictos
+            self.spout_sender = SpoutSender(spout_name, self.spout_width, self.spout_height, GL_RGBA)
+            print(f"Nuevo SpoutSender creado con nombre: {spout_name}")
             
             # Guardar la resolución actual para futuras comparaciones
             self.spout_width_current = self.spout_width
@@ -369,11 +415,29 @@ class Pipeline:
             self.last_valid_image = current_output
             
             # Enviar a Spout si está disponible, estamos en Windows y está habilitado
-            if SPOUT_AVAILABLE and self.spout_sender is not None and getattr(params, 'enableSpout', True):
+            if SPOUT_AVAILABLE and getattr(params, 'enableSpout', True):
                 try:
-                    self.sendSpout(current_output)
+                    # Verificar si el SpoutSender es None o si ha ocurrido un error previo
+                    if self.spout_sender is None:
+                        print("SpoutSender no está inicializado, intentando reinicializar...")
+                        self.initspout()
+                        
+                    # Intentar enviar la imagen a través de Spout
+                    if self.spout_sender is not None:
+                        self.sendSpout(current_output)
+                    else:
+                        print("No se pudo reinicializar SpoutSender, omitiendo envío a Spout")
+                        
                 except Exception as e:
                     print(f"Warning: Failed to send to Spout: {e}")
+                    # Si hay un error al enviar, intentar reinicializar Spout
+                    print("Intentando reinicializar Spout después del error...")
+                    try:
+                        self.close_spout()
+                        self.initspout()
+                    except Exception as reinit_error:
+                        print(f"Error al reinicializar Spout: {reinit_error}")
+                        self.spout_sender = None
             
             return current_output
             
