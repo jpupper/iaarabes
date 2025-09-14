@@ -128,15 +128,9 @@ class Pipeline:
         
         # Inicializar Spout solo en Windows
         self.spout_sender = None
-        if SPOUT_AVAILABLE:
-            try:
-                # Inicializar Spout con las dimensiones exactas
-                self.spout_width = params.width
-                self.spout_height = params.height
-                self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
-            except Exception as e:
-                print(f"Warning: Could not initialize Spout: {e}")
-                self.spout_sender = None
+        self.spout_width = params.width
+        self.spout_height = params.height
+        self.initialize_spout()
 
         if device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
@@ -180,6 +174,16 @@ class Pipeline:
             self._diffusers_pipe.to(device)
             self.ready = True
 
+    def initialize_spout(self):
+        """Inicializa el emisor Spout con las dimensiones actuales"""
+        if SPOUT_AVAILABLE:
+            try:
+                # Inicializar Spout con las dimensiones exactas
+                self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
+            except Exception as e:
+                print(f"Warning: Could not initialize Spout: {e}")
+                self.spout_sender = None
+    
     def sendSpout(self, image):
         """Enviar imagen a Spout"""
         # Si no estamos en Windows o Spout no está disponible, no hacer nada
