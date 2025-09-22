@@ -66,6 +66,7 @@
     }
   }
 
+
   export function getSelectedSource() {
     if (selectedSourceId === 'screen') {
       return {

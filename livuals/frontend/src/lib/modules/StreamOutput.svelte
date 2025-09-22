@@ -7,6 +7,7 @@
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
+  import GenerativeShader from '$lib/components/GenerativeShader.svelte';
   import Checkbox from '$lib/components/Checkbox.svelte';
   import { FieldType } from '$lib/types';
   
@@ -117,13 +118,21 @@
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     {#if isImageMode}
       <div class="sm:col-start-1">
-        <VideoInput
-          width={Number(pipelineParams.width.default)}
-          height={Number(pipelineParams.height.default)}
-        />
+        <h3 class="text-lg font-medium mb-2">Input source</h3>
+        {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
+          <div class="w-full aspect-video">
+            <GenerativeShader />
+          </div>
+        {:else}
+          <VideoInput
+            width={Number(pipelineParams.width.default)}
+            height={Number(pipelineParams.height.default)}
+          />
+        {/if}
       </div>
     {/if}
     <div class={isImageMode ? 'sm:col-start-2' : 'col-span-2'}>
+      <h3 class="text-lg font-medium mb-2">Final Output</h3>
       <ImagePlayer />
     </div>
   </div>
