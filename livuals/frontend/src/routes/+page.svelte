@@ -25,9 +25,47 @@
   let currentQueueSize: number = 0;
   let queueCheckerRunning: boolean = false;
   let warningMessage: string = '';
+  // Variable para controlar si la página está visible o no
+  let pageVisible = true;
+  
   onMount(() => {
     getSettings();
+    
+    // Agregar event listener para detectar cuando la página está visible/oculta
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Limpiar event listener cuando se desmonta el componente
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   });
+  
+  // Función para manejar cambios de visibilidad
+  function handleVisibilityChange() {
+    pageVisible = document.visibilityState === 'visible';
+    console.log(`Página ${pageVisible ? 'visible' : 'oculta'}, manteniendo la conexión activa`);
+    
+    // Mantener la conexión activa incluso cuando la página está en segundo plano
+    if (!pageVisible) {
+      // Crear un worker en segundo plano para mantener la conexión activa
+      keepConnectionAlive();
+    }
+  }
+  
+  // Función para mantener la conexión activa
+  function keepConnectionAlive() {
+    // Enviar ping cada 5 segundos para mantener la conexión activa
+    const pingInterval = setInterval(() => {
+      if (document.visibilityState !== 'visible') {
+        fetch('/api/ping')
+          .then(response => response.json())
+          .catch(error => console.error('Error al hacer ping:', error));
+      } else {
+        // Si la página vuelve a ser visible, limpiar el intervalo
+        clearInterval(pingInterval);
+      }
+    }, 5000);
+  }
 
   async function getSettings() {
     const settings = await fetch('/api/settings').then((r) => r.json());

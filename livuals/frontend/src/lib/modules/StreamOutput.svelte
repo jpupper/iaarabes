@@ -1,6 +1,7 @@
 <script lang="ts">
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
+  import { generativePatternStatus, generativeFrameStore, GenerativePatternStatusEnum } from '$lib/generativePattern';
   import { getPipelineValues } from '$lib/store';
   import { widthHeightSlidersLocked } from '$lib/sliderStore';
   import Button from '$lib/components/Button.svelte';
@@ -36,7 +37,12 @@
     pipelineValues.enableSpout = enableSpout;
     
     if (isImageMode) {
-      return [pipelineValues, $onFrameChangeStore?.blob];
+      // Si el patrón generativo está activo, usar ese frame en lugar del de la cámara
+      if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE) {
+        return [pipelineValues, $generativeFrameStore?.blob];
+      } else {
+        return [pipelineValues, $onFrameChangeStore?.blob];
+      }
     } else {
       return [pipelineValues];
     }
@@ -70,10 +76,20 @@
       const fd = new FormData();
       fd.append('params', JSON.stringify(params));
       if (isImageMode) {
-        const blob = $onFrameChangeStore?.blob;
-        if (!blob || blob.size === 0) {
-          warningMessage = 'No hay frame de cámara disponible todavía.';
-          return;
+        // Si el patrón generativo está activo, usar ese frame para el snapshot
+        let blob;
+        if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE) {
+          blob = $generativeFrameStore?.blob;
+          if (!blob || blob.size === 0) {
+            warningMessage = 'No hay frame generativo disponible todavía.';
+            return;
+          }
+        } else {
+          blob = $onFrameChangeStore?.blob;
+          if (!blob || blob.size === 0) {
+            warningMessage = 'No hay frame de cámara disponible todavía.';
+            return;
+          }
         }
         fd.append('image', blob, 'input.jpg');
       }
