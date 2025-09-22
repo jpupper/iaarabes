@@ -120,8 +120,10 @@
       <div class="sm:col-start-1">
         <h3 class="text-lg font-medium mb-2">Input source</h3>
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
-          <div class="w-full aspect-video">
-            <GenerativeShader />
+          <div class="w-full flex justify-center items-center">
+            <div class="w-4/5 max-w-md">
+              <GenerativeShader />
+            </div>
           </div>
         {:else}
           <VideoInput

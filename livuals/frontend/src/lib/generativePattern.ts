@@ -6,8 +6,17 @@ export enum GenerativePatternStatusEnum {
     INACTIVE = "inactive",
 }
 
+// Lista de shaders disponibles
+export const AVAILABLE_SHADERS = [
+    { id: 'radial', name: 'Patrón Radial', file: 'radialShader' },
+    { id: 'lines', name: 'Patrón de Líneas', file: 'linesShader' }
+];
+
 // Store para el estado del patrón generativo
 export const generativePatternStatus = writable(GenerativePatternStatusEnum.INIT);
+
+// Store para el shader seleccionado actualmente
+export const selectedShader = writable(AVAILABLE_SHADERS[0]);
 
 // Store para el último frame generado
 export const generativeFrameStore: Writable<{ blob: Blob }> = writable({ blob: new Blob() });
@@ -20,6 +29,13 @@ export const generativePatternActions = {
     
     stop() {
         generativePatternStatus.set(GenerativePatternStatusEnum.INACTIVE);
+    },
+
+    selectShader(shaderId: string) {
+        const shader = AVAILABLE_SHADERS.find(s => s.id === shaderId);
+        if (shader) {
+            selectedShader.set(shader);
+        }
     },
     
     // Método para actualizar el frame actual desde el canvas

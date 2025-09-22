@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum } from '$lib/generativePattern';
+  import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum, selectedShader } from '$lib/generativePattern';
+  import { get } from 'svelte/store';
   
   let canvas: HTMLCanvasElement;
   let gl: WebGLRenderingContext | null = null;
@@ -8,50 +9,28 @@
   let animationFrameId: number;
   let startTime = Date.now();
   
-  // Shader básico (fragment shader)
-  const fragmentShaderSource = `
-    precision mediump float;
-    uniform float u_time;
-    uniform vec2 u_resolution;
-    
-    void main() {
-      vec2 uv = gl_FragCoord.xy / u_resolution;
+  let currentShaderModule: any = null;
+  let fragmentShaderSource = '';
+  let vertexShaderSource = '';
+  
+  // Función para cargar el shader seleccionado
+  async function loadShader() {
+    try {
+      const currentShader = get(selectedShader);
+      currentShaderModule = await import(`../shaders/${currentShader.file}.ts`);
       
-      // Coordenadas normalizadas al centro
-      vec2 center = uv - 0.5;
+      fragmentShaderSource = currentShaderModule.fragmentShaderSource;
+      vertexShaderSource = currentShaderModule.vertexShaderSource;
       
-      // Patrón circular que cambia con el tiempo
-      float dist = length(center);
-      float pulse = sin(u_time * 0.5) * 0.5 + 0.5;
-      
-      // Colores que cambian con el tiempo
-      vec3 color1 = vec3(0.5 + 0.5 * sin(u_time * 0.3), 
-                         0.5 + 0.5 * sin(u_time * 0.4), 
-                         0.5 + 0.5 * sin(u_time * 0.5));
-      
-      vec3 color2 = vec3(0.5 + 0.5 * cos(u_time * 0.4),
-                         0.5 + 0.5 * cos(u_time * 0.5),
-                         0.5 + 0.5 * cos(u_time * 0.3));
-      
-      // Mezcla de colores basada en la distancia y el tiempo
-      float pattern = sin(dist * 20.0 - u_time * 2.0) * 0.5 + 0.5;
-      vec3 color = mix(color1, color2, pattern);
-      
-      // Añadir un círculo pulsante
-      float circle = smoothstep(pulse * 0.2, pulse * 0.21, dist);
-      color = mix(color2, color, circle);
-      
-      gl_FragColor = vec4(color, 1.0);
+      if (gl && program) {
+        // Si ya tenemos un contexto GL, recreamos el programa con el nuevo shader
+        gl.deleteProgram(program);
+        setupShaderProgram();
+      }
+    } catch (error) {
+      console.error('Error al cargar el shader:', error);
     }
-  `;
-
-  // Vertex shader básico
-  const vertexShaderSource = `
-    attribute vec4 a_position;
-    void main() {
-      gl_Position = a_position;
-    }
-  `;
+  }
 
   function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader {
     const shader = gl.createShader(type);
@@ -80,41 +59,51 @@
       return;
     }
     
-    // Compilar shaders
-    const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
-    const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+    setupShaderProgram();
+  }
+  
+  function setupShaderProgram() {
+    if (!gl || !fragmentShaderSource || !vertexShaderSource) return;
     
-    // Crear programa
-    program = gl.createProgram();
-    if (!program) {
-      throw new Error('No se pudo crear el programa WebGL');
+    try {
+      // Compilar shaders
+      const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+      const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+      
+      // Crear programa
+      program = gl.createProgram();
+      if (!program) {
+        throw new Error('No se pudo crear el programa WebGL');
+      }
+      
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const info = gl.getProgramInfoLog(program);
+        throw new Error('Error al enlazar programa: ' + info);
+      }
+      
+      // Crear un cuadrado que cubre toda la pantalla
+      const positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      
+      const positions = [
+        -1.0, -1.0,
+         1.0, -1.0,
+        -1.0,  1.0,
+         1.0,  1.0,
+      ];
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+      
+      // Obtener ubicaciones de atributos y uniformes
+      const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+      gl.enableVertexAttribArray(positionAttributeLocation);
+      gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    } catch (error) {
+      console.error('Error al configurar programa shader:', error);
     }
-    
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(program);
-      throw new Error('Error al enlazar programa: ' + info);
-    }
-    
-    // Crear un cuadrado que cubre toda la pantalla
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    
-    const positions = [
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-       1.0,  1.0,
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    
-    // Obtener ubicaciones de atributos y uniformes
-    const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(positionAttributeLocation);
-    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
   }
 
   function render() {
@@ -178,8 +167,14 @@
     }
   }
 
-  onMount(() => {
+  // Suscribirse a cambios en el shader seleccionado
+  $: if ($selectedShader) {
+    loadShader();
+  }
+
+  onMount(async () => {
     try {
+      await loadShader();
       setupWebGL();
       animationFrameId = requestAnimationFrame(render);
     } catch (error) {
@@ -194,7 +189,7 @@
   });
 </script>
 
-<div class="w-full h-full bg-black rounded-lg overflow-hidden">
+<div class="w-full aspect-square bg-black rounded-lg overflow-hidden">
   <canvas 
     bind:this={canvas} 
     class="w-full h-full"
