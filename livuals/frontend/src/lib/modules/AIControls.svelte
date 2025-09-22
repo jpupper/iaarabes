@@ -1,5 +1,6 @@
 <script lang="ts">
   import { pipelineValues } from '$lib/store';
+  import { widthHeightSlidersLocked } from '$lib/sliderStore';
   import PipelineOptions from '$lib/components/PipelineOptions.svelte';
   import type { Fields } from '$lib/types';
   
@@ -16,6 +17,7 @@
     <PipelineOptions
       {pipelineParams}
       disabled={disabled || internalDisabled}
+      shouldBlockSliders={$widthHeightSlidersLocked}
     />
   </div>
 </div>

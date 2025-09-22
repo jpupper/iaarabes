@@ -2,6 +2,7 @@
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
   import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
   import { getPipelineValues } from '$lib/store';
+  import { widthHeightSlidersLocked } from '$lib/sliderStore';
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
@@ -17,6 +18,14 @@
   let enableSpout = true;
   
   $: isLCMRunning = $lcmLiveStatus !== LCMLiveStatus.DISCONNECTED;
+  // Actualizar el store widthHeightSlidersLocked cuando cambia el estado
+  $: {
+    if (isLCMRunning || $lcmLiveStatus === LCMLiveStatus.INITIALIZING) {
+      widthHeightSlidersLocked.set(true);
+    } else {
+      widthHeightSlidersLocked.set(false);
+    }
+  }
   $: if ($lcmLiveStatus === LCMLiveStatus.TIMEOUT) {
     warningMessage = 'Session timed out. Please try again.';
   }
@@ -106,7 +115,12 @@
   <div class="flex flex-col gap-3">
     <div class="flex gap-3">
       <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
-        {#if isLCMRunning}
+        {#if $lcmLiveStatus === LCMLiveStatus.INITIALIZING}
+          <span class="flex items-center justify-center gap-2">
+            <span class="animate-spin h-4 w-4 border-2 border-white dark:border-black rounded-full border-t-transparent"></span>
+            Iniciando...
+          </span>
+        {:else if isLCMRunning}
           Stop
         {:else}
           Start

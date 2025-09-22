@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store';
 
-
 export enum LCMLiveStatus {
     CONNECTED = "connected",
     DISCONNECTED = "disconnected",
+    INITIALIZING = "initializing",
     WAIT = "wait",
     SEND_FRAME = "send_frame",
     TIMEOUT = "timeout",
@@ -19,6 +19,8 @@ export const inferenceTime = writable<number | null>(null);
 let websocket: WebSocket | null = null;
 export const lcmLiveActions = {
     async start(getSreamdata: () => any[]) {
+        // Establecer estado como inicializando
+        lcmLiveStatus.set(LCMLiveStatus.INITIALIZING);
         return new Promise((resolve, reject) => {
 
             try {
@@ -105,5 +107,16 @@ export const lcmLiveActions = {
         }
         websocket = null;
         streamId.set(null);
+        
+        // Llamar al endpoint para liberar recursos
+        try {
+            const response = await fetch('/api/release', {
+                method: 'POST',
+            });
+            const data = await response.json();
+            console.log('Liberación de recursos:', data);
+        } catch (error) {
+            console.error('Error al liberar recursos:', error);
+        }
     },
 };

@@ -210,6 +210,17 @@ class App:
                     "busy": getattr(pipeline, "busy", False),
                 }
             )
+            
+        @self.app.post("/api/release")
+        async def release_resources():
+            try:
+                if hasattr(pipeline, "release_resources"):
+                    pipeline.release_resources()
+                    return JSONResponse({"status": "success", "message": "Recursos liberados correctamente"})
+                return JSONResponse({"status": "warning", "message": "Método release_resources no disponible"})
+            except Exception as e:
+                logging.error(f"Error al liberar recursos: {e}")
+                return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
         # Listado de archivos de audio ubicados en public/audio (fuera del build de frontend)
         @self.app.get("/api/audio/list")
