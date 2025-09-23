@@ -37,109 +37,65 @@ export const generativePatternActions = {
     // Método para cargar la lista de shaders desde el backend
     async loadShaders() {
         try {
+            console.log('Intentando cargar shaders desde el servidor...');
+            
             // Inicializar con shaders por defecto en caso de error
             const defaultShaders = [
                 { id: 'radial', name: 'Patrón Radial', file: 'radial' },
                 { id: 'lines', name: 'Patrón de Líneas', file: 'lines' }
             ];
             
-            // Asegurarse de que AVAILABLE_SHADERS tenga al menos un valor por defecto
-            AVAILABLE_SHADERS.set(defaultShaders);
-            
+            // Intentar directamente con la URL que sabemos que funciona
             try {
-                console.log('Intentando cargar shaders desde el servidor...');
-                // Usar el mismo servidor que ya está corriendo, sin hardcodear el puerto
-                try {
-                    // Intentar con diferentes rutas para la API
-                    const apiUrls = [
-                        '/api/shaders/list',
-                        'http://localhost:7860/api/shaders/list',
-                        window.location.origin + '/api/shaders/list'
-                    ];
+                console.log('Intentando cargar desde http://localhost:7860/api/shaders/list');
+                const response = await fetch('http://localhost:7860/api/shaders/list');
+                
+                if (response.ok) {
+                    const shaders = await response.json();
+                    console.log('Shaders obtenidos:', shaders);
                     
-                    console.log('Intentando con las siguientes URLs:', apiUrls);
-                    
-                    let response;
-                    let success = false;
-                    
-                    for (const url of apiUrls) {
-                        try {
-                            console.log(`Intentando fetch a ${url}...`);
-                            response = await fetch(url);
-                            console.log(`Respuesta de ${url}:`, response.status, response.statusText);
-                            
-                            if (response.ok) {
-                                console.log(`Éxito con ${url}`);
-                                success = true;
-                                break;
-                            }
-                        } catch (e) {
-                            console.warn(`Error al intentar ${url}:`, e);
-                        }
-                    }
-                    
-                    if (!success || !response) {
-                        throw new Error('No se pudo conectar a ninguna URL de la API');
-                    }
-                    console.log('Respuesta recibida:', response.status, response.statusText);
-                    
-                    if (response.ok) {
-                        const responseText = await response.text();
-                        console.log('Respuesta en texto:', responseText);
+                    if (shaders && Array.isArray(shaders) && shaders.length > 0) {
+                        console.log('Shaders cargados correctamente:', shaders);
+                        AVAILABLE_SHADERS.set(shaders);
                         
-                        try {
-                            const shaders = JSON.parse(responseText);
-                            console.log('Shaders parseados:', shaders);
-                            
-                            if (shaders && Array.isArray(shaders) && shaders.length > 0) {
-                                console.log('Shaders cargados correctamente:', shaders);
-                                AVAILABLE_SHADERS.set(shaders);
-                                
-                                // Seleccionar el primer shader por defecto
-                                selectedShader.set(shaders[0]);
-                                await this.loadShaderSource(shaders[0].id);
-                                return;
-                            } else {
-                                console.warn('La respuesta del servidor no contiene shaders válidos o está vacía');
-                            }
-                        } catch (parseError) {
-                            console.error('Error al parsear la respuesta JSON:', parseError);
-                        }
+                        // Seleccionar el primer shader por defecto
+                        selectedShader.set(shaders[0]);
+                        await this.loadShaderSource(shaders[0].id);
+                        return;
                     } else {
-                        console.warn(`Error en la respuesta: ${response.status} ${response.statusText}`);
+                        console.warn('La respuesta no contiene shaders válidos');
                     }
-                } catch (fetchError) {
-                    console.error('Error al hacer fetch a /api/shaders/list:', fetchError);
+                } else {
+                    console.warn(`Error en la respuesta: ${response.status} ${response.statusText}`);
                 }
-                
-                // Si llegamos aquí, hubo un problema con la respuesta o está vacía
-                console.warn('No se pudieron cargar los shaders desde el backend, usando valores por defecto');
-                throw new Error('No se pudieron cargar los shaders desde el backend');
             } catch (fetchError) {
-                console.warn('Error al cargar shaders desde el backend, usando valores por defecto:', fetchError);
-                // Usar shaders por defecto (ya establecidos al inicio)
-                selectedShader.set(defaultShaders[0]);
-                
-                // Cargar código de shader por defecto
-                shaderSources.set({
-                    fragmentShaderSource: `
-                        precision mediump float;
-                        uniform float u_time;
-                        uniform vec2 u_resolution;
-                        
-                        void main() {
-                            vec2 uv = gl_FragCoord.xy / u_resolution;
-                            gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
-                        }
-                    `,
-                    vertexShaderSource: `
-                        attribute vec2 a_position;
-                        void main() {
-                            gl_Position = vec4(a_position, 0.0, 1.0);
-                        }
-                    `
-                });
+                console.error('Error al cargar shaders:', fetchError);
             }
+            
+            // Si llegamos aquí, usar los shaders por defecto
+            console.warn('Usando shaders por defecto');
+            AVAILABLE_SHADERS.set(defaultShaders);
+            selectedShader.set(defaultShaders[0]);
+            
+            // Cargar código de shader por defecto
+            shaderSources.set({
+                fragmentShaderSource: `
+                    precision mediump float;
+                    uniform float u_time;
+                    uniform vec2 u_resolution;
+                    
+                    void main() {
+                        vec2 uv = gl_FragCoord.xy / u_resolution;
+                        gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
+                    }
+                `,
+                vertexShaderSource: `
+                    attribute vec2 a_position;
+                    void main() {
+                        gl_Position = vec4(a_position, 0.0, 1.0);
+                    }
+                `
+            });
         } catch (error) {
             console.error('Error crítico al cargar shaders:', error);
             // Asegurarse de que siempre haya un shader seleccionado
@@ -168,42 +124,21 @@ export const generativePatternActions = {
     // Método para cargar el código fuente de un shader específico
     async loadShaderSource(shaderId: string) {
         try {
+            console.log(`Intentando cargar shader ${shaderId}...`);
+            
             // Intentar cargar desde el backend
             try {
-                // Usar el mismo servidor que ya está corriendo, sin hardcodear el puerto
-                // Intentar con diferentes rutas para la API
-                const apiUrls = [
-                    `/api/shaders/${shaderId}`,
-                    `http://localhost:7860/api/shaders/${shaderId}`,
-                    `${window.location.origin}/api/shaders/${shaderId}`
-                ];
+                // Usar directamente la URL que sabemos que funciona
+                const url = `http://localhost:7860/api/shaders/${shaderId}`;
+                console.log(`Intentando fetch a ${url}...`);
                 
-                console.log(`Intentando cargar shader ${shaderId} con las siguientes URLs:`, apiUrls);
+                const response = await fetch(url);
+                console.log(`Respuesta de ${url}:`, response.status, response.statusText);
                 
-                let response;
-                let success = false;
-                
-                for (const url of apiUrls) {
-                    try {
-                        console.log(`Intentando fetch a ${url}...`);
-                        response = await fetch(url);
-                        console.log(`Respuesta de ${url}:`, response.status, response.statusText);
-                        
-                        if (response.ok) {
-                            console.log(`Éxito con ${url}`);
-                            success = true;
-                            break;
-                        }
-                    } catch (e) {
-                        console.warn(`Error al intentar ${url}:`, e);
-                    }
-                }
-                
-                if (!success || !response) {
-                    throw new Error(`No se pudo cargar el shader ${shaderId} desde ninguna URL de la API`);
-                }
                 if (response.ok) {
                     const sources = await response.json();
+                    console.log(`Shader ${shaderId} cargado:`, sources);
+                    
                     if (sources && sources.fragmentShaderSource && sources.vertexShaderSource) {
                         shaderSources.set({
                             fragmentShaderSource: sources.fragmentShaderSource,
@@ -212,9 +147,9 @@ export const generativePatternActions = {
                         return;
                     }
                 }
-                throw new Error(`Error al cargar el código del shader: ${response.statusText}`);
+                throw new Error(`Error al cargar el shader ${shaderId}`);
             } catch (fetchError) {
-                console.warn(`Error al cargar el shader ${shaderId} desde el backend, usando shader por defecto:`, fetchError);
+                console.warn(`Error al cargar el shader ${shaderId}, usando shader por defecto:`, fetchError);
                 
                 // Usar un shader por defecto según el ID
                 let fragmentSource = '';

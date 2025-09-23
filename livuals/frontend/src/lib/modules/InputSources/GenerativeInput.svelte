@@ -1,11 +1,25 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import Button from '$lib/components/Button.svelte';
   import { generativePatternActions, AVAILABLE_SHADERS, selectedShader } from '$lib/generativePattern';
+  import { get } from 'svelte/store';
 
   const dispatch = createEventDispatcher();
   
   export let isActive = false;
+  
+  // Cargar shaders al montar el componente
+  onMount(async () => {
+    console.log('GenerativeInput: Verificando shaders disponibles...');
+    
+    // Si no hay shaders cargados, cargarlos
+    if (get(AVAILABLE_SHADERS).length === 0) {
+      console.log('GenerativeInput: No hay shaders cargados, cargando...');
+      await generativePatternActions.loadShaders();
+    } else {
+      console.log('GenerativeInput: Shaders ya cargados:', get(AVAILABLE_SHADERS));
+    }
+  });
 
   function toggleGenerative() {
     isActive = !isActive;
@@ -36,11 +50,15 @@
         id="shader-select" 
         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
         on:change={selectShader}
-        value={$selectedShader.id}
+        value={$selectedShader?.id || ''}
       >
-        {#each AVAILABLE_SHADERS as shader}
-          <option value={shader.id}>{shader.name}</option>
-        {/each}
+        {#if $AVAILABLE_SHADERS && $AVAILABLE_SHADERS.length > 0}
+          {#each $AVAILABLE_SHADERS as shader}
+            <option value={shader.id}>{shader.name}</option>
+          {/each}
+        {:else}
+          <option value="" disabled>Cargando shaders...</option>
+        {/if}
       </select>
     </div>
     
