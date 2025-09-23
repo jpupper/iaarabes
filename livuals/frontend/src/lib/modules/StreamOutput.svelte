@@ -8,6 +8,7 @@
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
   import GenerativeShader from '$lib/components/GenerativeShader.svelte';
+  import ShaderSelector from '$lib/components/ShaderSelector.svelte';
   import Checkbox from '$lib/components/Checkbox.svelte';
   import { FieldType } from '$lib/types';
   
@@ -120,9 +121,14 @@
       <div class="sm:col-start-1">
         <h3 class="text-lg font-medium mb-2">Input source</h3>
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
-          <div class="w-full flex justify-center items-center">
-            <div class="w-4/5 max-w-md">
-              <GenerativeShader />
+          <div class="w-full flex flex-col gap-4">
+            <div class="flex justify-center items-center">
+              <div class="w-4/5 max-w-md">
+                <GenerativeShader />
+              </div>
+            </div>
+            <div class="w-full">
+              <ShaderSelector />
             </div>
           </div>
         {:else}

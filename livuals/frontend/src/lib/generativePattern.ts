@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store';
+import { writable, type Writable, get } from 'svelte/store';
 
 export enum GenerativePatternStatusEnum {
     INIT = "init",
@@ -7,16 +7,19 @@ export enum GenerativePatternStatusEnum {
 }
 
 // Lista de shaders disponibles
-export const AVAILABLE_SHADERS = [
-    { id: 'radial', name: 'Patrón Radial', file: 'radialShader' },
-    { id: 'lines', name: 'Patrón de Líneas', file: 'linesShader' }
-];
+export const AVAILABLE_SHADERS = writable<Array<{id: string, name: string, file: string}>>([]);
+
+// Store para el código fuente de los shaders
+export const shaderSources = writable<{fragmentShaderSource: string, vertexShaderSource: string}>({fragmentShaderSource: '', vertexShaderSource: ''});
 
 // Store para el estado del patrón generativo
 export const generativePatternStatus = writable(GenerativePatternStatusEnum.INIT);
 
+// Definir un shader por defecto para evitar undefined
+const defaultShader = { id: 'default', name: 'Patrón por defecto', file: 'default' };
+
 // Store para el shader seleccionado actualmente
-export const selectedShader = writable(AVAILABLE_SHADERS[0]);
+export const selectedShader = writable<{id: string, name: string, file: string}>(defaultShader);
 
 // Store para el último frame generado
 export const generativeFrameStore: Writable<{ blob: Blob }> = writable({ blob: new Blob() });
@@ -31,10 +34,244 @@ export const generativePatternActions = {
         generativePatternStatus.set(GenerativePatternStatusEnum.INACTIVE);
     },
 
+    // Método para cargar la lista de shaders desde el backend
+    async loadShaders() {
+        try {
+            // Inicializar con shaders por defecto en caso de error
+            const defaultShaders = [
+                { id: 'radial', name: 'Patrón Radial', file: 'radial' },
+                { id: 'lines', name: 'Patrón de Líneas', file: 'lines' }
+            ];
+            
+            // Asegurarse de que AVAILABLE_SHADERS tenga al menos un valor por defecto
+            AVAILABLE_SHADERS.set(defaultShaders);
+            
+            try {
+                console.log('Intentando cargar shaders desde el servidor...');
+                // Usar el mismo servidor que ya está corriendo, sin hardcodear el puerto
+                try {
+                    // Intentar con diferentes rutas para la API
+                    const apiUrls = [
+                        '/api/shaders/list',
+                        'http://localhost:7860/api/shaders/list',
+                        window.location.origin + '/api/shaders/list'
+                    ];
+                    
+                    console.log('Intentando con las siguientes URLs:', apiUrls);
+                    
+                    let response;
+                    let success = false;
+                    
+                    for (const url of apiUrls) {
+                        try {
+                            console.log(`Intentando fetch a ${url}...`);
+                            response = await fetch(url);
+                            console.log(`Respuesta de ${url}:`, response.status, response.statusText);
+                            
+                            if (response.ok) {
+                                console.log(`Éxito con ${url}`);
+                                success = true;
+                                break;
+                            }
+                        } catch (e) {
+                            console.warn(`Error al intentar ${url}:`, e);
+                        }
+                    }
+                    
+                    if (!success || !response) {
+                        throw new Error('No se pudo conectar a ninguna URL de la API');
+                    }
+                    console.log('Respuesta recibida:', response.status, response.statusText);
+                    
+                    if (response.ok) {
+                        const responseText = await response.text();
+                        console.log('Respuesta en texto:', responseText);
+                        
+                        try {
+                            const shaders = JSON.parse(responseText);
+                            console.log('Shaders parseados:', shaders);
+                            
+                            if (shaders && Array.isArray(shaders) && shaders.length > 0) {
+                                console.log('Shaders cargados correctamente:', shaders);
+                                AVAILABLE_SHADERS.set(shaders);
+                                
+                                // Seleccionar el primer shader por defecto
+                                selectedShader.set(shaders[0]);
+                                await this.loadShaderSource(shaders[0].id);
+                                return;
+                            } else {
+                                console.warn('La respuesta del servidor no contiene shaders válidos o está vacía');
+                            }
+                        } catch (parseError) {
+                            console.error('Error al parsear la respuesta JSON:', parseError);
+                        }
+                    } else {
+                        console.warn(`Error en la respuesta: ${response.status} ${response.statusText}`);
+                    }
+                } catch (fetchError) {
+                    console.error('Error al hacer fetch a /api/shaders/list:', fetchError);
+                }
+                
+                // Si llegamos aquí, hubo un problema con la respuesta o está vacía
+                console.warn('No se pudieron cargar los shaders desde el backend, usando valores por defecto');
+                throw new Error('No se pudieron cargar los shaders desde el backend');
+            } catch (fetchError) {
+                console.warn('Error al cargar shaders desde el backend, usando valores por defecto:', fetchError);
+                // Usar shaders por defecto (ya establecidos al inicio)
+                selectedShader.set(defaultShaders[0]);
+                
+                // Cargar código de shader por defecto
+                shaderSources.set({
+                    fragmentShaderSource: `
+                        precision mediump float;
+                        uniform float u_time;
+                        uniform vec2 u_resolution;
+                        
+                        void main() {
+                            vec2 uv = gl_FragCoord.xy / u_resolution;
+                            gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
+                        }
+                    `,
+                    vertexShaderSource: `
+                        attribute vec2 a_position;
+                        void main() {
+                            gl_Position = vec4(a_position, 0.0, 1.0);
+                        }
+                    `
+                });
+            }
+        } catch (error) {
+            console.error('Error crítico al cargar shaders:', error);
+            // Asegurarse de que siempre haya un shader seleccionado
+            const currentShader = get(selectedShader);
+            if (!currentShader || !currentShader.id) {
+                selectedShader.set(defaultShader);
+            }
+        }
+    },
+
+    // Método para seleccionar un shader por su ID
     selectShader(shaderId: string) {
-        const shader = AVAILABLE_SHADERS.find(s => s.id === shaderId);
-        if (shader) {
-            selectedShader.set(shader);
+        let found = false;
+        AVAILABLE_SHADERS.update(shaders => {
+            const shader = shaders.find(s => s.id === shaderId);
+            if (shader) {
+                selectedShader.set(shader);
+                this.loadShaderSource(shader.id);
+                found = true;
+            }
+            return shaders;
+        });
+        return found;
+    },
+    
+    // Método para cargar el código fuente de un shader específico
+    async loadShaderSource(shaderId: string) {
+        try {
+            // Intentar cargar desde el backend
+            try {
+                // Usar el mismo servidor que ya está corriendo, sin hardcodear el puerto
+                // Intentar con diferentes rutas para la API
+                const apiUrls = [
+                    `/api/shaders/${shaderId}`,
+                    `http://localhost:7860/api/shaders/${shaderId}`,
+                    `${window.location.origin}/api/shaders/${shaderId}`
+                ];
+                
+                console.log(`Intentando cargar shader ${shaderId} con las siguientes URLs:`, apiUrls);
+                
+                let response;
+                let success = false;
+                
+                for (const url of apiUrls) {
+                    try {
+                        console.log(`Intentando fetch a ${url}...`);
+                        response = await fetch(url);
+                        console.log(`Respuesta de ${url}:`, response.status, response.statusText);
+                        
+                        if (response.ok) {
+                            console.log(`Éxito con ${url}`);
+                            success = true;
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn(`Error al intentar ${url}:`, e);
+                    }
+                }
+                
+                if (!success || !response) {
+                    throw new Error(`No se pudo cargar el shader ${shaderId} desde ninguna URL de la API`);
+                }
+                if (response.ok) {
+                    const sources = await response.json();
+                    if (sources && sources.fragmentShaderSource && sources.vertexShaderSource) {
+                        shaderSources.set({
+                            fragmentShaderSource: sources.fragmentShaderSource,
+                            vertexShaderSource: sources.vertexShaderSource
+                        });
+                        return;
+                    }
+                }
+                throw new Error(`Error al cargar el código del shader: ${response.statusText}`);
+            } catch (fetchError) {
+                console.warn(`Error al cargar el shader ${shaderId} desde el backend, usando shader por defecto:`, fetchError);
+                
+                // Usar un shader por defecto según el ID
+                let fragmentSource = '';
+                
+                if (shaderId === 'radial') {
+                    fragmentSource = `
+                        precision mediump float;
+                        uniform float u_time;
+                        uniform vec2 u_resolution;
+                        
+                        void main() {
+                            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
+                            float d = length(uv);
+                            float c = sin(d * 10.0 - u_time * 2.0) * 0.5 + 0.5;
+                            gl_FragColor = vec4(c, c * 0.5, c * 0.8, 1.0);
+                        }
+                    `;
+                } else if (shaderId === 'lines') {
+                    fragmentSource = `
+                        precision mediump float;
+                        uniform float u_time;
+                        uniform vec2 u_resolution;
+                        
+                        void main() {
+                            vec2 uv = gl_FragCoord.xy / u_resolution;
+                            float c = sin(uv.y * 50.0 + u_time * 2.0) * 0.5 + 0.5;
+                            gl_FragColor = vec4(c, c * 0.3, c * 0.7, 1.0);
+                        }
+                    `;
+                } else {
+                    // Shader genérico
+                    fragmentSource = `
+                        precision mediump float;
+                        uniform float u_time;
+                        uniform vec2 u_resolution;
+                        
+                        void main() {
+                            vec2 uv = gl_FragCoord.xy / u_resolution;
+                            gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
+                        }
+                    `;
+                }
+                
+                const vertexSource = `
+                    attribute vec2 a_position;
+                    void main() {
+                        gl_Position = vec4(a_position, 0.0, 1.0);
+                    }
+                `;
+                
+                shaderSources.set({
+                    fragmentShaderSource: fragmentSource,
+                    vertexShaderSource: vertexSource
+                });
+            }
+        } catch (error) {
+            console.error(`Error crítico al cargar el shader ${shaderId}:`, error);
         }
     },
     

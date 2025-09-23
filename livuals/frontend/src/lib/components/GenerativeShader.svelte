@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum, selectedShader } from '$lib/generativePattern';
+  import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum, selectedShader, shaderSources } from '$lib/generativePattern';
   import { get } from 'svelte/store';
   
   let canvas: HTMLCanvasElement;
@@ -9,18 +9,21 @@
   let animationFrameId: number;
   let startTime = Date.now();
   
-  let currentShaderModule: any = null;
   let fragmentShaderSource = '';
   let vertexShaderSource = '';
   
   // Función para cargar el shader seleccionado
-  async function loadShader() {
+  function loadShader() {
     try {
-      const currentShader = get(selectedShader);
-      currentShaderModule = await import(`../shaders/${currentShader.file}.ts`);
+      const sources = get(shaderSources);
       
-      fragmentShaderSource = currentShaderModule.fragmentShaderSource;
-      vertexShaderSource = currentShaderModule.vertexShaderSource;
+      if (!sources || !sources.fragmentShaderSource || !sources.vertexShaderSource) {
+        console.warn('Fuentes de shader no disponibles o incompletas');
+        return;
+      }
+      
+      fragmentShaderSource = sources.fragmentShaderSource;
+      vertexShaderSource = sources.vertexShaderSource;
       
       if (gl && program) {
         // Si ya tenemos un contexto GL, recreamos el programa con el nuevo shader
@@ -167,15 +170,51 @@
     }
   }
 
-  // Suscribirse a cambios en el shader seleccionado
-  $: if ($selectedShader) {
-    loadShader();
+  // Suscribirse a cambios en el código fuente del shader
+  $: if ($shaderSources) {
+    if ($shaderSources.fragmentShaderSource && $shaderSources.vertexShaderSource) {
+      loadShader();
+    }
   }
 
   onMount(async () => {
     try {
-      await loadShader();
+      console.log('Inicializando GenerativeShader...');
+      
+      // Inicializar WebGL primero
       setupWebGL();
+      
+      // Cargar la lista de shaders disponibles desde el backend
+      // Esto también cargará el primer shader por defecto
+      console.log('Cargando shaders...');
+      await generativePatternActions.loadShaders();
+      
+      // Verificar si tenemos fuentes de shader
+      const sources = get(shaderSources);
+      if (!sources.fragmentShaderSource || !sources.vertexShaderSource) {
+        console.warn('No se cargaron las fuentes de shader, cargando shader por defecto');
+        shaderSources.set({
+          fragmentShaderSource: `
+            precision mediump float;
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            
+            void main() {
+                vec2 uv = gl_FragCoord.xy / u_resolution;
+                gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
+            }
+          `,
+          vertexShaderSource: `
+            attribute vec2 a_position;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+          `
+        });
+      }
+      
+      // Iniciar la animación
+      console.log('Iniciando animación...');
       animationFrameId = requestAnimationFrame(render);
     } catch (error) {
       console.error('Error al inicializar WebGL:', error);
