@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum, selectedShader, shaderSources } from '$lib/generativePattern';
   import { get } from 'svelte/store';
+  import { canvasDimensions } from '$lib/canvasDimensions';
   
   let canvas: HTMLCanvasElement;
   let gl: WebGLRenderingContext | null = null;
@@ -228,9 +229,11 @@
   });
 </script>
 
-<div class="w-full aspect-square bg-black rounded-lg overflow-hidden">
+<div class="w-full aspect-square bg-black rounded-lg overflow-hidden" style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;">
   <canvas 
     bind:this={canvas} 
     class="w-full h-full"
+    width={$canvasDimensions.width}
+    height={$canvasDimensions.height}
   ></canvas>
 </div>

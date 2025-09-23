@@ -8,9 +8,15 @@
     onFrameChangeStore,
     mediaStream
   } from '$lib/mediaStream';
-  export let width = 512;
-  export let height = 512;
-  const size = { width, height };
+  import { canvasDimensions } from '$lib/canvasDimensions';
+  
+  export let width = $canvasDimensions.width;
+  export let height = $canvasDimensions.height;
+  
+  // Usar el store para mantener el tamaño actualizado
+  $: width = $canvasDimensions.width;
+  $: height = $canvasDimensions.height;
+  $: size = { width, height };
 
   let videoEl: HTMLVideoElement;
   let canvasEl: HTMLCanvasElement;
@@ -75,7 +81,7 @@
   }
 </script>
 
-<div class="relative mx-auto max-w-lg overflow-hidden rounded-lg border border-slate-300">
+<div class="relative mx-auto overflow-hidden rounded-lg border border-slate-300" style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;">
   <div class="relative z-10 aspect-square w-full object-cover">
     <video
       class="pointer-events-none aspect-square w-full object-cover"

@@ -4,11 +4,13 @@
   import { generativePatternStatus, generativeFrameStore, GenerativePatternStatusEnum } from '$lib/generativePattern';
   import { getPipelineValues } from '$lib/store';
   import { widthHeightSlidersLocked } from '$lib/sliderStore';
+  import { canvasDimensions, canvasDimensionsActions } from '$lib/canvasDimensions';
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
   import GenerativeShader from '$lib/components/GenerativeShader.svelte';
   import Checkbox from '$lib/components/Checkbox.svelte';
+  import CanvasSizeControl from '$lib/components/CanvasSizeControl.svelte';
   import { FieldType } from '$lib/types';
   
   export let isImageMode: boolean = false;
@@ -122,9 +124,7 @@
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
           <div class="w-full flex flex-col gap-4">
             <div class="flex justify-center items-center">
-              <div class="w-4/5 max-w-md">
-                <GenerativeShader />
-              </div>
+              <GenerativeShader />
             </div>
           </div>
         {:else}
@@ -142,6 +142,9 @@
   </div>
   
   <div class="flex flex-col gap-3">
+    <div class="mb-4">
+      <CanvasSizeControl />
+    </div>
     <div class="flex gap-3">
       <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
         {#if $lcmLiveStatus === LCMLiveStatus.INITIALIZING}

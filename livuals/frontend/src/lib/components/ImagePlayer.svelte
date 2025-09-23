@@ -5,6 +5,7 @@
   import Button from '$lib/components/Button.svelte';
   import Floppy from '$lib/icons/floppy.svelte';
   import { snapImage } from '$lib/utils';
+  import { canvasDimensions } from '$lib/canvasDimensions';
 
   $: isLCMRunning = $lcmLiveStatus !== LCMLiveStatus.DISCONNECTED;
   $: console.log('isLCMRunning', isLCMRunning);
@@ -22,7 +23,8 @@
 </script>
 
 <div
-  class="relative mx-auto aspect-square max-w-lg self-center overflow-hidden rounded-lg border border-slate-300"
+  class="relative mx-auto aspect-square self-center overflow-hidden rounded-lg border border-slate-300"
+  style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;"
 >
   <!-- svelte-ignore a11y-missing-attribute -->
   {#if isLCMRunning && $streamId}
