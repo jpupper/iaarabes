@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { generativePatternActions, generativePatternStatus, GenerativePatternStatusEnum, selectedShader, shaderSources } from '$lib/generativePattern';
+  import { shaderParams, shaderParamsActions, parameterChanged } from '$lib/shaderParams';
   import { get } from 'svelte/store';
   import { canvasDimensions } from '$lib/canvasDimensions';
   
@@ -134,6 +135,9 @@
     gl.uniform1f(timeUniformLocation, elapsedTime);
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     
+    // Aplicar los parámetros del shader
+    shaderParamsActions.applyParamsToShader(gl, program);
+    
     // Dibujar
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     
@@ -176,6 +180,12 @@
     if ($shaderSources.fragmentShaderSource && $shaderSources.vertexShaderSource) {
       loadShader();
     }
+  }
+  
+  // Observar cambios en los parámetros del shader
+  $: if ($parameterChanged && gl && program) {
+    // Aplicar los parámetros al shader
+    shaderParamsActions.applyParamsToShader(gl, program);
   }
 
   onMount(async () => {

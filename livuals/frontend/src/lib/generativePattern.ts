@@ -107,17 +107,23 @@ export const generativePatternActions = {
     },
 
     // Método para seleccionar un shader por su ID
-    selectShader(shaderId: string) {
+    async selectShader(shaderId: string) {
         let found = false;
         AVAILABLE_SHADERS.update(shaders => {
             const shader = shaders.find(s => s.id === shaderId);
             if (shader) {
                 selectedShader.set(shader);
-                this.loadShaderSource(shader.id);
                 found = true;
             }
             return shaders;
         });
+        
+        if (found) {
+            console.log(`Seleccionando shader: ${shaderId}`);
+            // Cargar el shader y sus parámetros
+            await this.loadShaderSource(shaderId);
+        }
+        
         return found;
     },
     
@@ -144,6 +150,14 @@ export const generativePatternActions = {
                             fragmentShaderSource: sources.fragmentShaderSource,
                             vertexShaderSource: sources.vertexShaderSource
                         });
+                        
+                        // Importar el módulo de parámetros de shader y cargar los parámetros
+                        import('./shaderParams').then(module => {
+                            const shaderParamsActions = module.shaderParamsActions;
+                            console.log('Analizando parámetros del shader...');
+                            shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
+                        });
+                        
                         return;
                     }
                 }
@@ -160,11 +174,18 @@ export const generativePatternActions = {
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
+                        // Parámetros personalizables
+                        uniform float u_speed;         // Velocidad de animación
+                        uniform float u_frequency;     // Frecuencia del patrón
+                        uniform vec3 u_color;          // Color principal
+                        uniform float u_intensity;     // Intensidad del efecto
+                        
                         void main() {
                             vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
                             float d = length(uv);
-                            float c = sin(d * 10.0 - u_time * 2.0) * 0.5 + 0.5;
-                            gl_FragColor = vec4(c, c * 0.5, c * 0.8, 1.0);
+                            float c = sin(d * 10.0 * u_frequency - u_time * u_speed) * 0.5 + 0.5;
+                            c = pow(c, u_intensity);
+                            gl_FragColor = vec4(c * u_color.r, c * u_color.g, c * u_color.b, 1.0);
                         }
                     `;
                 } else if (shaderId === 'lines') {
@@ -173,10 +194,19 @@ export const generativePatternActions = {
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
+                        // Parámetros personalizables
+                        uniform float u_frequency;     // Frecuencia de las líneas
+                        uniform float u_speed;         // Velocidad de animación
+                        uniform vec3 u_color1;         // Color principal
+                        uniform vec3 u_color2;         // Color secundario
+                        uniform bool u_vertical;       // Orientación vertical
+                        
                         void main() {
                             vec2 uv = gl_FragCoord.xy / u_resolution;
-                            float c = sin(uv.y * 50.0 + u_time * 2.0) * 0.5 + 0.5;
-                            gl_FragColor = vec4(c, c * 0.3, c * 0.7, 1.0);
+                            float coord = u_vertical ? uv.x : uv.y;
+                            float c = sin(coord * 50.0 * u_frequency + u_time * u_speed) * 0.5 + 0.5;
+                            vec3 color = mix(u_color1, u_color2, c);
+                            gl_FragColor = vec4(color, 1.0);
                         }
                     `;
                 } else {
@@ -186,9 +216,24 @@ export const generativePatternActions = {
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
+                        // Parámetros personalizables
+                        uniform float u_speed;         // Velocidad de animación
+                        uniform float u_saturation;    // Saturación del color
+                        uniform float u_brightness;    // Brillo
+                        
                         void main() {
                             vec2 uv = gl_FragCoord.xy / u_resolution;
-                            gl_FragColor = vec4(uv.x, uv.y, sin(u_time) * 0.5 + 0.5, 1.0);
+                            float r = uv.x;
+                            float g = uv.y;
+                            float b = sin(u_time * u_speed) * 0.5 + 0.5;
+                            
+                            // Aplicar saturación y brillo
+                            vec3 color = vec3(r, g, b);
+                            vec3 gray = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
+                            color = mix(gray, color, u_saturation);
+                            color = color * u_brightness;
+                            
+                            gl_FragColor = vec4(color, 1.0);
                         }
                     `;
                 }
@@ -203,6 +248,13 @@ export const generativePatternActions = {
                 shaderSources.set({
                     fragmentShaderSource: fragmentSource,
                     vertexShaderSource: vertexSource
+                });
+                
+                // Importar el módulo de parámetros de shader y cargar los parámetros
+                import('./shaderParams').then(module => {
+                    const shaderParamsActions = module.shaderParamsActions;
+                    console.log('Analizando parámetros del shader por defecto...');
+                    shaderParamsActions.loadParamsFromShader(fragmentSource);
                 });
             }
         } catch (error) {
