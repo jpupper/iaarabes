@@ -239,11 +239,21 @@
   });
 </script>
 
-<div class="w-full aspect-square bg-black rounded-lg overflow-hidden" style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;">
-  <canvas 
-    bind:this={canvas} 
-    class="w-full h-full"
-    width={$canvasDimensions.width}
-    height={$canvasDimensions.height}
-  ></canvas>
+<div class="w-full aspect-square rounded-lg overflow-hidden" 
+     style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px; background-color: var(--color-primary); box-shadow: var(--shadow-md);">
+  <div class="w-full h-full relative">
+    <canvas 
+      bind:this={canvas} 
+      class="w-full h-full"
+      width={$canvasDimensions.width}
+      height={$canvasDimensions.height}
+    ></canvas>
+    
+    {#if $generativePatternStatus !== GenerativePatternStatusEnum.ACTIVE && $generativePatternStatus !== GenerativePatternStatusEnum.INACTIVE}
+      <div class="absolute inset-0 flex items-center justify-center" 
+           style="background-color: rgba(31, 41, 55, 0.8); color: var(--color-error);">
+        <p class="text-center p-4">Error al cargar el shader</p>
+      </div>
+    {/if}
+  </div>
 </div>

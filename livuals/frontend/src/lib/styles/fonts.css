@@ -1,0 +1,58 @@
+/* Importar Geist Sans */
+@import url('https://fonts.googleapis.com/css2?family=Geist+Sans:wght@400;500;600;700&display=swap');
+
+/* Importar Geist Mono */
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
+
+/* Aplicar fuentes por defecto */
+body {
+  font-family: var(--font-family-main);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+/* Estilos de tipografía */
+h1, .main-title {
+  font-size: var(--font-size-main-title);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-md);
+}
+
+h2, .section-title {
+  font-size: var(--font-size-section-title);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+}
+
+h3, .subtitle {
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.card-title {
+  font-size: var(--font-size-card-title);
+  font-weight: var(--font-weight-semibold);
+}
+
+.body-text {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.secondary-text {
+  font-size: var(--font-size-secondary);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-secondary);
+}
+
+.label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+}
+
+code, pre, .mono {
+  font-family: var(--font-family-mono);
+}

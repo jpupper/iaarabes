@@ -100,11 +100,11 @@
   }
 </script>
 
-<div class="bg-white border border-gray-200 rounded-lg p-4">
+<div class="module-container">
 
   <div class="space-y-4">
     <!-- Componente de cámara con dropdown -->
-    <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'border-green-500 bg-green-50' : ''}">
+    <div class="card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active-card' : ''}">
       <CamInput 
         selectedDeviceId={selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? selectedSourceId : null}
         on:cameraSelected={handleCameraSelected}
@@ -112,7 +112,7 @@
       />
     </div>
 
-    <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId === 'screen' ? 'border-green-500 bg-green-50' : ''}">
+    <div class="card {selectedSourceId === 'screen' ? 'active-card' : ''}">
       <ShareInput 
         isActive={isScreenActive}
         on:screenSelected={handleScreenSelected}
@@ -120,7 +120,7 @@
       />
     </div>
 
-    <div class="border border-gray-200 rounded-lg p-4 {selectedSourceId === 'generative' ? 'border-green-500 bg-green-50' : ''}">
+    <div class="card {selectedSourceId === 'generative' ? 'active-card' : ''}">
       <GenerativeInput 
         isActive={isGenerativeActive}
         on:generativeSelected={handleGenerativeSelected}
@@ -130,3 +130,10 @@
     </div>
   </div>
 </div>
+
+<style>
+  .active-card {
+    border: 2px solid var(--color-success);
+    background-color: rgba(74, 222, 128, 0.1);
+  }
+</style>

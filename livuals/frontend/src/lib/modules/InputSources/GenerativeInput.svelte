@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import Button from '$lib/components/Button.svelte';
   import { generativePatternActions, AVAILABLE_SHADERS, selectedShader, shaderSources } from '$lib/generativePattern';
@@ -37,8 +37,8 @@
     }
   }
 
-  async function selectShader(event) {
-    const select = event.target;
+  async function selectShader(event: Event) {
+    const select = event.target as HTMLSelectElement;
     await generativePatternActions.selectShader(select.value);
     
     // Extraer los parámetros del shader seleccionado
@@ -49,13 +49,13 @@
   }
   
   // Manejar cambios en los parámetros del shader
-  function handleParamChange(data) {
+  function handleParamChange(data: { name: string; value: any }) {
     const { name, value } = data;
     shaderParamsActions.updateParamValue(name, value);
   }
   
   // Manejar cambios en componentes de vectores
-  function handleVectorComponentChange(data) {
+  function handleVectorComponentChange(data: { name: string; index: number; value: number }) {
     const { name, index, value } = data;
     shaderParamsActions.updateVectorComponent(name, index, value);
   }
@@ -72,15 +72,15 @@
 </script>
 
 <div class="space-y-2">
-  <h3 class="text-lg font-medium">Patrón Generativo</h3>
-  <p class="text-sm text-gray-600">Genera patrones visuales usando shaders</p>
+  <h3 class="section-title">Patrón Generativo</h3>
+  <p class="secondary-text">Genera patrones visuales usando shaders</p>
   
   <div class="flex flex-col space-y-3 mt-2">
     <div>
-      <label for="shader-select" class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Shader:</label>
+      <label for="shader-select" class="block secondary-text mb-1">Seleccionar Shader:</label>
       <select 
         id="shader-select" 
-        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        class="select"
         on:change={selectShader}
         value={$selectedShader?.id || ''}
       >
@@ -96,18 +96,19 @@
     
     <Button 
       on:click={toggleGenerative}
-      classList={isActive ? 'p-2 bg-blue-600 hover:bg-blue-700' : 'p-2 bg-gray-500 hover:bg-gray-600'}
+      variant={isActive ? 'primary' : 'secondary'}
+      size="md"
     >
       {isActive ? 'Seleccionado' : 'Seleccionar'}
     </Button>
     
     <!-- Sección de parámetros del shader -->
     {#if $shaderParams && $shaderParams.length > 0}
-      <div class="mt-4 border-t pt-4 bg-blue-50 p-2 rounded">
+      <div class="mt-4 border-t pt-4">
         <div class="flex justify-between items-center mb-3">
-          <h4 class="text-md font-medium text-blue-800">Parámetros del Shader</h4>
+          <h4 class="card-title">Parámetros del Shader</h4>
           <button 
-            class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            class="btn btn-primary text-xs p-2"
             on:click={() => showParameters = !showParameters}
           >
             {showParameters ? 'Ocultar' : 'Mostrar'}
@@ -115,11 +116,11 @@
         </div>
         
         {#if showParameters}
-          <div class="bg-gray-50 p-3 rounded-md">
+          <div class="p-3 rounded-md" style="background-color: var(--color-primary);">
             <div class="mb-3 flex justify-between items-center">
-              <span class="text-sm text-gray-600">{$shaderParams.length} parámetros disponibles</span>
+              <span class="secondary-text">{$shaderParams.length} parámetros disponibles</span>
               <button 
-                class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
+                class="btn btn-secondary text-xs p-2"
                 on:click={resetAllParams}
               >
                 Restablecer valores
@@ -131,13 +132,13 @@
                 <!-- Parámetro de shader -->
                 <div class="shader-param mb-4">
                   <div class="flex justify-between items-center mb-1">
-                    <label class="text-sm font-medium" for="param-{param.name}">
+                    <label class="secondary-text font-medium" for="param-{param.name}">
                       {param.label}
                       {#if param.description}
-                        <span class="text-xs text-gray-500 ml-1" title={param.description}>ℹ️</span>
+                        <span class="secondary-text ml-1" title={param.description}>ℹ️</span>
                       {/if}
                     </label>
-                    <span class="text-xs text-gray-600">
+                    <span class="secondary-text">
                       {#if ['vec2', 'vec3', 'vec4'].includes(param.type) && Array.isArray(param.value)}
                         [
                         {#each param.value as component, i}
@@ -163,9 +164,9 @@
                           const target = e.currentTarget;
                           handleParamChange({ name: param.name, value: target.checked });
                         }}
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        class="checkbox"
                       />
-                      <label for="param-{param.name}" class="ml-2 text-sm font-medium text-gray-900">
+                      <label for="param-{param.name}" class="ml-2 secondary-text font-medium">
                         {param.value ? 'Activado' : 'Desactivado'}
                       </label>
                     </div>
@@ -174,10 +175,10 @@
                     {#each param.value as component, i}
                       <div class="mb-2">
                         <div class="flex justify-between items-center mb-1">
-                          <label class="text-xs text-gray-600" for="param-{param.name}-{i}">
+                          <label class="secondary-text" for="param-{param.name}-{i}">
                             {['X', 'Y', 'Z', 'W'][i]}
                           </label>
-                          <span class="text-xs text-gray-600">{component.toFixed(2)}</span>
+                          <span class="secondary-text">{component.toFixed(2)}</span>
                         </div>
                         <input
                           type="range"
@@ -190,7 +191,7 @@
                             const target = e.currentTarget;
                             handleVectorComponentChange({ name: param.name, index: i, value: parseFloat(target.value) });
                           }}
-                          class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          class="slider"
                         />
                       </div>
                     {/each}
@@ -207,7 +208,7 @@
                         const target = e.currentTarget;
                         handleParamChange({ name: param.name, value: param.type === 'int' ? parseInt(target.value) : parseFloat(target.value) });
                       }}
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      class="slider"
                     />
                   {/if}
                 </div>

@@ -64,12 +64,12 @@
   }
 </script>
 
-<div class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+<div class="card">
   <div class="flex justify-between items-center mb-4">
-    <h2 class="text-lg font-semibold">Patrón Generativo</h2>
+    <h2 class="section-title">Patrón Generativo</h2>
     <div class="flex space-x-2">
       <button 
-        class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+        class="btn btn-primary text-xs p-2"
         on:click={() => {
           isLoading = true;
           generativePatternActions.loadShaders().finally(() => isLoading = false);
@@ -78,7 +78,7 @@
         Recargar Shaders
       </button>
       <button 
-        class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+        class="btn btn-secondary text-xs p-2"
         on:click={() => {
           const shaders = get(AVAILABLE_SHADERS);
           console.log('AVAILABLE_SHADERS:', shaders);
@@ -93,10 +93,10 @@
 
   <div class="space-y-4">
     <div class="flex flex-col">
-      <label for="shader-select" class="text-sm font-medium mb-1">Seleccionar Shader</label>
+      <label for="shader-select" class="secondary-text mb-1">Seleccionar Shader</label>
       <select
         id="shader-select"
-        class="border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-white dark:bg-gray-900"
+        class="select"
         on:change={handleShaderChange}
         value={currentShaderId}
         disabled={isLoading}
@@ -114,7 +114,7 @@
         {/if}
       </select>
       
-      <div class="text-xs text-gray-500 mt-1">
+      <div class="secondary-text mt-1">
         {#if isLoading}
           Cargando shaders...
         {:else if $AVAILABLE_SHADERS && $AVAILABLE_SHADERS.length > 0}
@@ -127,13 +127,13 @@
 
     <div class="flex space-x-2">
       <button
-        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex-1"
+        class="btn btn-success flex-1"
         on:click={() => generativePatternActions.start()}
       >
         Iniciar
       </button>
       <button
-        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex-1"
+        class="btn btn-error flex-1"
         on:click={() => generativePatternActions.stop()}
       >
         Detener

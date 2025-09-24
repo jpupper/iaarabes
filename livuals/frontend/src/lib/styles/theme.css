@@ -1,0 +1,201 @@
+:root {
+  /* Colores principales del tema */
+  --color-background: #374151;
+  --color-primary: #1f2937;
+  --color-secondary: #f8fafc;
+  --color-accent: #4076f6;
+  --color-error: #ef4444;
+  --color-success: #4ade80;
+
+  /* Colores adicionales y variantes */
+  --color-text-primary: var(--color-secondary);
+  --color-text-secondary: #d1d5db;
+  --color-border: #4b5563;
+  --color-hover-accent: #3b6fe0;
+  --color-hover-primary: #283548;
+  --color-hover-success: #3dc873;
+  --color-hover-error: #e12d2d;
+  
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Bordes */
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos para el modo oscuro (que es el predeterminado) */
+html, body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* Estilos para componentes comunes */
+.card {
+  background-color: var(--color-primary);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-secondary);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-hover-accent);
+}
+
+.btn-secondary {
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-hover-primary);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: var(--color-primary);
+}
+
+.btn-success:hover {
+  background-color: var(--color-hover-success);
+}
+
+.btn-error {
+  background-color: var(--color-error);
+  color: var(--color-secondary);
+}
+
+.btn-error:hover {
+  background-color: var(--color-hover-error);
+}
+
+.input, .select {
+  background-color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  width: 100%;
+}
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(64, 118, 246, 0.2);
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 2rem;
+}
+
+.slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: none;
+}
+
+.section-title {
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.card-title {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.secondary-text {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Estilos para el contenedor principal */
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+}
+
+/* Estilos para módulos */
+.module-container {
+  background-color: var(--color-primary);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+}
+
+/* Estilos para elementos activos */
+.active-card {
+  border: 2px solid var(--color-success) !important;
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+/* Estilos para checkboxes */
+.checkbox {
+  accent-color: var(--color-accent);
+}
