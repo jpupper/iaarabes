@@ -72,12 +72,12 @@
 </script>
 
 <div class="space-y-2">
-  <h3 class="section-title">Patrón Generativo</h3>
-  <p class="secondary-text">Genera patrones visuales usando shaders</p>
+  <h3 class="subtitle">Patrón Generativo</h3>
+  <p class="text-secondary">Genera patrones visuales usando shaders</p>
   
   <div class="flex flex-col space-y-3 mt-2">
     <div>
-      <label for="shader-select" class="block secondary-text mb-1">Seleccionar Shader:</label>
+      <label for="shader-select" class="block text-secondary mb-1">Seleccionar Shader:</label>
       <select 
         id="shader-select" 
         class="select"
@@ -108,7 +108,7 @@
         <div class="flex justify-between items-center mb-3">
           <h4 class="card-title">Parámetros del Shader</h4>
           <button 
-            class="btn btn-primary text-xs p-2"
+            class="btn btn-primary btn-sm"
             on:click={() => showParameters = !showParameters}
           >
             {showParameters ? 'Ocultar' : 'Mostrar'}
@@ -116,11 +116,11 @@
         </div>
         
         {#if showParameters}
-          <div class="p-3 rounded-md" style="background-color: var(--color-primary);">
+          <div class="p-3 rounded-md bg-primary">
             <div class="mb-3 flex justify-between items-center">
-              <span class="secondary-text">{$shaderParams.length} parámetros disponibles</span>
+              <span class="text-secondary">{$shaderParams.length} parámetros disponibles</span>
               <button 
-                class="btn btn-secondary text-xs p-2"
+                class="btn btn-secondary btn-sm"
                 on:click={resetAllParams}
               >
                 Restablecer valores
@@ -132,13 +132,13 @@
                 <!-- Parámetro de shader -->
                 <div class="shader-param mb-4">
                   <div class="flex justify-between items-center mb-1">
-                    <label class="secondary-text font-medium" for="param-{param.name}">
+                    <label class="text-secondary font-medium" for="param-{param.name}">
                       {param.label}
                       {#if param.description}
-                        <span class="secondary-text ml-1" title={param.description}>ℹ️</span>
+                        <span class="text-secondary ml-1" title={param.description}>ℹ️</span>
                       {/if}
                     </label>
-                    <span class="secondary-text">
+                    <span class="text-secondary">
                       {#if ['vec2', 'vec3', 'vec4'].includes(param.type) && Array.isArray(param.value)}
                         [
                         {#each param.value as component, i}
@@ -166,7 +166,7 @@
                         }}
                         class="checkbox"
                       />
-                      <label for="param-{param.name}" class="ml-2 secondary-text font-medium">
+                      <label for="param-{param.name}" class="ml-2 text-secondary font-medium">
                         {param.value ? 'Activado' : 'Desactivado'}
                       </label>
                     </div>
@@ -175,10 +175,10 @@
                     {#each param.value as component, i}
                       <div class="mb-2">
                         <div class="flex justify-between items-center mb-1">
-                          <label class="secondary-text" for="param-{param.name}-{i}">
+                          <label class="text-secondary" for="param-{param.name}-{i}">
                             {['X', 'Y', 'Z', 'W'][i]}
                           </label>
-                          <span class="secondary-text">{component.toFixed(2)}</span>
+                          <span class="text-secondary">{component.toFixed(2)}</span>
                         </div>
                         <input
                           type="range"

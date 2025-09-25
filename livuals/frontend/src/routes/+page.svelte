@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Fields, PipelineInfo } from '$lib/types';
   import { PipelineMode } from '$lib/types';
-      import Button from '$lib/components/Button.svelte';
+  import Button from '$lib/components/Button.svelte';
   import Spinner from '$lib/icons/spinner.svelte';
   import StatusMessages from '$lib/modules/StatusMessages.svelte';
   import Warning from '$lib/components/Warning.svelte';
@@ -11,6 +11,7 @@
   import StreamOutput from '$lib/modules/StreamOutput.svelte';
   import Lyrics from '$lib/modules/Lyrics.svelte';
   import InputSourcesModule from '$lib/modules/InputSourcesModule.svelte';
+  import TabsSystem from '$lib/components/TabsSystem.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -27,6 +28,16 @@
   let warningMessage: string = '';
   // Variable para controlar si la página está visible o no
   let pageVisible = true;
+  
+  // Sistema de tabs
+  let activeTab = 'ai-panel';
+  const tabs = [
+    { id: 'ai-panel', label: 'AI Panel', icon: 'settings' },
+    { id: 'stream', label: 'Stream', icon: 'video' },
+    { id: 'inputs', label: 'Inputs', icon: 'camera' },
+    { id: 'lyrics', label: 'Lyrics', icon: 'music_note' },
+    { id: 'status', label: 'Status', icon: 'analytics' }
+  ];
   
   onMount(() => {
     getSettings();
@@ -164,41 +175,48 @@
 
   {#if pipelineParams}
     <article class="module-container">
-      <!-- Stream Output Module -->
-      <StreamOutput
-        {isImageMode}
-        {pipelineParams}
-        bind:warningMessage={warningMessage}
-        disabled={!backendReady}
-      />
-    </article>
-
-    <article class="module-container">
-      <!-- AI Controls Module -->
-      <AIControls
-        {pipelineParams}
-        disabled={!backendReady}
-      />
-    </article>
-
-    <article class="module-container">
-      <!-- Input Sources Module -->
-      <InputSourcesModule />
-    </article>
-
-    <article class="module-container">
-      <!-- Lyrics Module -->
-      <Lyrics />
-    </article>
-
-    <article class="module-container">
-      <!-- Status Messages Module -->
-      <StatusMessages
-        {runtimeNotice}
-        {buildId}
-        {backendReady}
-        {loadingNotice}
-      />
+      <TabsSystem {tabs} bind:activeTab on:tabChange={(e) => console.log('Tab changed:', e.detail.tabId)}>
+        <!-- Contenido de las pestañas -->
+      </TabsSystem>
+      
+      <!-- Tab Content -->
+      <div class="tab-content {activeTab === 'ai-panel' ? 'active' : ''}">
+        <!-- AI Controls Module -->
+        <AIControls
+          {pipelineParams}
+          disabled={!backendReady}
+        />
+      </div>
+      
+      <div class="tab-content {activeTab === 'stream' ? 'active' : ''}">
+        <!-- Stream Output Module -->
+        <StreamOutput
+          {isImageMode}
+          {pipelineParams}
+          bind:warningMessage={warningMessage}
+          disabled={!backendReady}
+        />
+      </div>
+      
+      <div class="tab-content {activeTab === 'inputs' ? 'active' : ''}">
+        <!-- Input Sources Module -->
+        <InputSourcesModule />
+      </div>
+      
+      <div class="tab-content {activeTab === 'lyrics' ? 'active' : ''}">
+        <!-- Lyrics Module -->
+        <Lyrics />
+      </div>
+      
+      <div class="tab-content {activeTab === 'status' ? 'active' : ''}">
+        <!-- Status Messages Module -->
+        <StatusMessages
+          {runtimeNotice}
+          {buildId}
+          {backendReady}
+          {loadingNotice}
+        />
+      </div>
     </article>
   {:else}
     <!-- loading -->
@@ -209,34 +227,4 @@
   {/if}
 </main>
 
-<style>
-  :global(html) {
-    color: black;
-    background-color: white;
-  }
-  :global(html.dark) {
-    color: white;
-    background-color: black;
-  }
-  :global(.slider) {
-    width: 100%;
-    height: 0.5rem;
-    background-color: #e5e7eb;
-    border-radius: 0.5rem;
-    appearance: none;
-    cursor: pointer;
-  }
-  :global(.dark .slider) {
-    background-color: #374151;
-  }
-  :global(.slider::-webkit-slider-thumb) {
-    width: 1rem;
-    height: 1rem;
-    background-color: black;
-    border-radius: 9999px;
-    appearance: none;
-  }
-  :global(.dark .slider::-webkit-slider-thumb) {
-    background-color: white;
-  }
-</style>
+<!-- Los estilos globales ahora se manejan en global.css -->

@@ -31,13 +31,13 @@
   }
 </script>
 
-<div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-  <h3 class="text-lg font-medium mb-3">Tamaño del Canvas</h3>
+<div class="card">
+  <h3 class="subtitle mb-3">Tamaño del Canvas</h3>
   
   <div class="grid grid-cols-2 gap-3 mb-4">
     {#each sizeOptions as option}
       <button 
-        class="px-3 py-2 border rounded-md text-sm {$canvasDimensions.width === option.width && $canvasDimensions.height === option.height ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}"
+        class="canvas-size-button {$canvasDimensions.width === option.width && $canvasDimensions.height === option.height ? 'active' : ''}"
         on:click={() => applyPresetSize(option.width, option.height)}
       >
         {option.label}
@@ -47,7 +47,7 @@
   
   <div class="flex flex-col space-y-2">
     <div class="flex items-center space-x-2">
-      <label for="canvas-width" class="text-sm w-16">Ancho:</label>
+      <label for="canvas-width" class="text-secondary w-16">Ancho:</label>
       <input 
         id="canvas-width"
         type="number" 
@@ -55,12 +55,12 @@
         min="128" 
         max="1024" 
         step="32"
-        class="border rounded-md px-2 py-1 w-full bg-white dark:bg-gray-700"
+        class="input"
       />
     </div>
     
     <div class="flex items-center space-x-2">
-      <label for="canvas-height" class="text-sm w-16">Alto:</label>
+      <label for="canvas-height" class="text-secondary w-16">Alto:</label>
       <input 
         id="canvas-height"
         type="number" 
@@ -68,19 +68,19 @@
         min="128" 
         max="1024" 
         step="32"
-        class="border rounded-md px-2 py-1 w-full bg-white dark:bg-gray-700"
+        class="input"
       />
     </div>
     
     <button 
-      class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+      class="btn btn-primary mt-2"
       on:click={applyCustomSize}
     >
       Aplicar
     </button>
   </div>
   
-  <div class="mt-3 text-xs text-gray-500">
+  <div class="mt-3 text-secondary">
     Tamaño actual: {$canvasDimensions.width}x{$canvasDimensions.height}
   </div>
 </div>

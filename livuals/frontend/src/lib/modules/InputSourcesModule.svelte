@@ -104,7 +104,7 @@
 
   <div class="space-y-4">
     <!-- Componente de cámara con dropdown -->
-    <div class="card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active-card' : ''}">
+    <div class="input-source-card card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active' : ''}">
       <CamInput 
         selectedDeviceId={selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? selectedSourceId : null}
         on:cameraSelected={handleCameraSelected}
@@ -112,7 +112,7 @@
       />
     </div>
 
-    <div class="card {selectedSourceId === 'screen' ? 'active-card' : ''}">
+    <div class="input-source-card card {selectedSourceId === 'screen' ? 'active' : ''}">
       <ShareInput 
         isActive={isScreenActive}
         on:screenSelected={handleScreenSelected}
@@ -120,7 +120,7 @@
       />
     </div>
 
-    <div class="card {selectedSourceId === 'generative' ? 'active-card' : ''}">
+    <div class="input-source-card card {selectedSourceId === 'generative' ? 'active' : ''}">
       <GenerativeInput 
         isActive={isGenerativeActive}
         on:generativeSelected={handleGenerativeSelected}
@@ -130,10 +130,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .active-card {
-    border: 2px solid var(--color-success);
-    background-color: rgba(74, 222, 128, 0.1);
-  }
-</style>

@@ -10,12 +10,12 @@
 </script>
 
 <div class="grid max-w-md grid-cols-4 items-center justify-items-start gap-3">
-  <label class="text-sm font-medium" for={params.id}>{params?.title}</label>
+  <label class="text-secondary font-medium" for={params.id}>{params?.title}</label>
   <input 
     bind:checked={value} 
     type="checkbox" 
     id={params.id} 
-    class="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+    class="checkbox" 
     {disabled}
   />
 </div>

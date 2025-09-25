@@ -15,14 +15,14 @@
 </script>
 
 <div class="grid max-w-md grid-cols-4 items-center gap-3">
-  <label class="text-sm font-medium" for="seed">Seed</label>
+  <label class="text-secondary font-medium" for="seed">Seed</label>
   <input
     bind:value
     type="number"
     id="seed"
     name="seed"
-    class="col-span-2 rounded-md border border-gray-700 p-2 text-right font-light dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+    class="input col-span-2 text-right"
     {disabled}
   />
-  <Button on:click={randomize} {disabled}>Rand</Button>
+  <Button on:click={randomize} variant="secondary" size="sm" {disabled}>Rand</Button>
 </div>

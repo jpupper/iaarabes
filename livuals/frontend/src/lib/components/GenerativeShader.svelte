@@ -239,8 +239,8 @@
   });
 </script>
 
-<div class="w-full aspect-square rounded-lg overflow-hidden" 
-     style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px; background-color: var(--color-primary); box-shadow: var(--shadow-md);">
+<div class="shader-canvas w-full aspect-square rounded-lg overflow-hidden" 
+     style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;">
   <div class="w-full h-full relative">
     <canvas 
       bind:this={canvas} 
@@ -251,8 +251,11 @@
     
     {#if $generativePatternStatus !== GenerativePatternStatusEnum.ACTIVE && $generativePatternStatus !== GenerativePatternStatusEnum.INACTIVE}
       <div class="absolute inset-0 flex items-center justify-center" 
-           style="background-color: rgba(31, 41, 55, 0.8); color: var(--color-error);">
-        <p class="text-center p-4">Error al cargar el shader</p>
+           style="background-color: rgba(31, 41, 55, 0.9);">
+        <div class="text-center p-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <p class="text-error font-medium">Error al cargar el shader</p>
+        </div>
       </div>
     {/if}
   </div>

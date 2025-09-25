@@ -115,12 +115,12 @@
 </script>
 
 <div class="flex flex-col gap-6 w-full">
-  <h2 class="text-xl font-bold">Stream Output</h2>
+  <h2 class="title">Stream Output</h2>
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  <div class="flex flex-wrap gap-4">
     {#if isImageMode}
-      <div class="sm:col-start-1">
-        <h3 class="text-lg font-medium mb-2">Input source</h3>
+      <div class="flex-1 min-w-[300px]">
+        <h3 class="subtitle">Input source</h3>
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
           <div class="w-full flex flex-col gap-4">
             <div class="flex justify-center items-center">
@@ -135,8 +135,8 @@
         {/if}
       </div>
     {/if}
-    <div class={isImageMode ? 'sm:col-start-2' : 'col-span-2'}>
-      <h3 class="text-lg font-medium mb-2">Final Output</h3>
+    <div class="flex-1 min-w-[300px]">
+      <h3 class="subtitle">Final Output</h3>
       <ImagePlayer />
     </div>
   </div>
@@ -146,10 +146,16 @@
       <CanvasSizeControl />
     </div>
     <div class="flex gap-3">
-      <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
+      <Button 
+        on:click={toggleLcmLive} 
+        disabled={disabled || internalDisabled} 
+        variant="primary"
+        size="lg"
+        classList="w-full"
+      >
         {#if $lcmLiveStatus === LCMLiveStatus.INITIALIZING}
           <span class="flex items-center justify-center gap-2">
-            <span class="animate-spin h-4 w-4 border-2 border-white dark:border-black rounded-full border-t-transparent"></span>
+            <span class="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></span>
             Iniciando...
           </span>
         {:else if isLCMRunning}
@@ -158,7 +164,11 @@
           Start
         {/if}
       </Button>
-      <Button on:click={snapshotOnce} classList={'text-lg p-3 bg-blue-600 text-white hover:bg-blue-700'}>
+      <Button 
+        on:click={snapshotOnce} 
+        variant="secondary"
+        size="lg"
+      >
         Snapshot
       </Button>
     </div>

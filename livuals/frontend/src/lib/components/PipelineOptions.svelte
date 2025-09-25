@@ -42,7 +42,7 @@
   </div>
   {#if advanceOptions && advanceOptions.length > 0}
     <details>
-      <summary class="cursor-pointer font-medium">Advanced Options</summary>
+      <summary class="cursor-pointer font-medium text-accent">Advanced Options</summary>
       <div
         class="grid grid-cols-1 items-center gap-3 {Object.values(pipelineParams).length > 5
           ? 'sm:grid-cols-2'

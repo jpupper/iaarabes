@@ -23,7 +23,7 @@
 </script>
 
 <div
-  class="relative mx-auto aspect-square self-center overflow-hidden rounded-lg border border-slate-300"
+  class="relative w-full aspect-square overflow-hidden rounded-lg shader-canvas"
   style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;"
 >
   <!-- svelte-ignore a11y-missing-attribute -->
@@ -38,7 +38,9 @@
         on:click={takeSnapshot}
         disabled={!isLCMRunning}
         title={'Take Snapshot'}
-        classList={'text-lg ml-auto text-white p-2 shadow-lg rounded-lg opacity-70 hover:opacity-100 transition-opacity'}
+        variant="primary"
+        size="sm"
+        classList="ml-auto opacity-70 hover:opacity-100 transition-opacity"
       >
         <Floppy classList={''} />
       </Button>

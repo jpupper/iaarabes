@@ -10,12 +10,13 @@
 </script>
 
 <div class="">
-  <label class="text-sm font-medium" for={params?.title}>
+  <label class="text-secondary font-medium mb-1 block" for={params?.id}>
     {params?.title}
   </label>
-  <div class="text-normal flex items-center rounded-md border border-gray-700">
+  <div class="">
     <textarea
-      class="mx-1 w-full px-3 py-2 font-light outline-none dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+      id={params?.id}
+      class="textarea w-full"
       {disabled}
       title={params?.title}
       placeholder="Add your prompt here..."

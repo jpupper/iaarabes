@@ -1,0 +1,27 @@
+.canvas-size-button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #1f2937;
+  color: #f8fafc;
+  border: 1px solid #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-main);
+}
+
+.canvas-size-button:hover {
+  background-color: #283548;
+}
+
+.canvas-size-button.active {
+  background-color: #4076f6;
+  color: #f8fafc;
+  border-color: #4076f6;
+}
+
+.canvas-size-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
