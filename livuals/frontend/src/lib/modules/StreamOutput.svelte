@@ -115,7 +115,6 @@
 </script>
 
 <div class="flex flex-col gap-6 w-full">
-  <h2 class="title">Stream Output</h2>
 
   <div class="flex flex-wrap gap-4">
     {#if isImageMode}

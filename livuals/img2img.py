@@ -59,7 +59,8 @@ taesd_model = "madebyollin/taesd"
 default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
-page_content = """<p id="page_content">VJING using AI</p>"""
+# Definir page_content como una cadena vacía para evitar errores
+page_content = """"""
 
 
 class Pipeline:

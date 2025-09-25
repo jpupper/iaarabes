@@ -9,7 +9,7 @@
   
   export let tabs: Tab[] = [
     { id: 'ai-panel', label: 'AI Panel', icon: 'settings' },
-    { id: 'stream', label: 'Stream', icon: 'video' },
+    { id: 'stream', label: 'Performance', icon: 'video' },
     { id: 'inputs', label: 'Inputs', icon: 'camera' },
     { id: 'lyrics', label: 'Lyrics', icon: 'music_note' },
     { id: 'status', label: 'Status', icon: 'analytics' }
@@ -20,6 +20,7 @@
   const dispatch = createEventDispatcher();
   
   function selectTab(tabId: string) {
+    console.log('TabsSystem: Seleccionando tab', tabId);
     activeTab = tabId;
     dispatch('tabChange', { tabId });
   }
@@ -41,7 +42,7 @@
 
 <div class="tabs-container">
   <div class="tabs-header">
-    {#each tabs as tab}
+    {#each tabs.filter(tab => tab.id !== 'stream') as tab}
       <button 
         class="tab-button {activeTab === tab.id ? 'active' : ''}" 
         on:click={() => selectTab(tab.id)}
