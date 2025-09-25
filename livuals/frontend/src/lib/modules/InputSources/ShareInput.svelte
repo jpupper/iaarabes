@@ -25,6 +25,11 @@
       startScreenShare();
     }
   }
+  
+  // Iniciar la captura de pantalla cuando se monta el componente si está activo
+  $: if (isActive) {
+    startScreenShare();
+  }
 </script>
 
 <div class="w-full flex items-center justify-between">

@@ -3,7 +3,7 @@
   import CamInput from './InputSources/CamInput.svelte';
   import ShareInput from './InputSources/ShareInput.svelte';
   import GenerativeInput from './InputSources/GenerativeInput.svelte';
-  import { mediaDevices } from '$lib/mediaStream';
+  import { mediaDevices, mediaStreamActions } from '$lib/mediaStream';
 
   type InputSource = {
     id: string;
@@ -23,6 +23,9 @@
     if (isScreenActive) {
       isScreenActive = false;
     }
+    if (isGenerativeActive) {
+      isGenerativeActive = false;
+    }
   }
   
   function handleCameraDeselected() {
@@ -35,6 +38,9 @@
     selectedSourceId = 'screen';
     isScreenActive = true;
     isGenerativeActive = false;
+    
+    // Iniciar automáticamente la captura de pantalla
+    mediaStreamActions.startScreenCapture();
   }
   
   function handleScreenDeselected() {
@@ -115,27 +121,24 @@
     <div 
       class="input-source-card card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active' : ''}"
       on:click={() => {
-        if (!selectedSourceId || selectedSourceId === 'screen' || selectedSourceId === 'generative') {
-          // Si hay cámaras disponibles, seleccionar la primera
-          const cameras = $mediaDevices || [];
-          if (cameras.length > 0) {
-            handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
-          } else {
-            console.log('No hay cámaras disponibles');
-          }
+        // Siempre intentar seleccionar la cámara, incluso si ya hay otro input seleccionado
+        const cameras = $mediaDevices || [];
+        if (cameras.length > 0) {
+          handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
+        } else {
+          console.log('No hay cámaras disponibles');
         }
       }}
       role="button"
       tabindex="0"
       on:keydown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          if (!selectedSourceId || selectedSourceId === 'screen' || selectedSourceId === 'generative') {
-            const cameras = $mediaDevices || [];
-            if (cameras.length > 0) {
-              handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
-            } else {
-              console.log('No hay cámaras disponibles');
-            }
+          // Siempre intentar seleccionar la cámara, incluso si ya hay otro input seleccionado
+          const cameras = $mediaDevices || [];
+          if (cameras.length > 0) {
+            handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
+          } else {
+            console.log('No hay cámaras disponibles');
           }
         }
       }}
@@ -150,17 +153,15 @@
     <div 
       class="input-source-card card {selectedSourceId === 'screen' ? 'active' : ''}"
       on:click={() => {
-        if (!isScreenActive) {
-          handleScreenSelected();
-        }
+        // Siempre intentar seleccionar la pantalla, incluso si ya está seleccionada
+        handleScreenSelected();
       }}
       role="button"
       tabindex="0"
       on:keydown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          if (!isScreenActive) {
-            handleScreenSelected();
-          }
+          // Siempre intentar seleccionar la pantalla, incluso si ya está seleccionada
+          handleScreenSelected();
         }
       }}
     >
@@ -174,17 +175,15 @@
     <div 
       class="input-source-card card {selectedSourceId === 'generative' ? 'active' : ''}"
       on:click={() => {
-        if (!isGenerativeActive) {
-          handleGenerativeSelected();
-        }
+        // Siempre intentar seleccionar el patrón generativo, incluso si ya está seleccionado
+        handleGenerativeSelected();
       }}
       role="button"
       tabindex="0"
       on:keydown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          if (!isGenerativeActive) {
-            handleGenerativeSelected();
-          }
+          // Siempre intentar seleccionar el patrón generativo, incluso si ya está seleccionado
+          handleGenerativeSelected();
         }
       }}
     >

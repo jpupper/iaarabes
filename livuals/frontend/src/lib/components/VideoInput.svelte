@@ -96,6 +96,16 @@
     ></video>
     <canvas bind:this={canvasEl} class="absolute left-0 top-0 aspect-square w-full object-cover"
     ></canvas>
+    
+    <!-- Mensaje de espera cuando no hay input activo -->
+    {#if !$mediaStream || $mediaStreamStatus !== MediaStreamStatusEnum.CONNECTED}
+      <div class="absolute inset-0 flex items-center justify-center bg-primary bg-opacity-80">
+        <div class="text-center p-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg>
+          <p class="text-secondary font-medium">Waiting for input source...</p>
+          <p class="text-secondary text-sm opacity-80 mt-1">Select a camera or screen to share</p>
+        </div>
+      </div>
+    {/if}
   </div>
-  <!-- Eliminado el icono de persona -->
 </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
-  import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
+  import { mediaStreamActions, onFrameChangeStore, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
   import { generativePatternStatus, generativeFrameStore, GenerativePatternStatusEnum } from '$lib/generativePattern';
   import { getPipelineValues } from '$lib/store';
   import { widthHeightSlidersLocked } from '$lib/sliderStore';
@@ -120,7 +120,19 @@
   <div class="flex flex-wrap gap-4">
     {#if isImageMode}
       <div class="flex-1 min-w-[300px]">
-        <h3 class="subtitle">Input source</h3>
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="subtitle mb-0">Input source</h3>
+          <div class="text-secondary text-sm flex items-center">
+            <div class="w-2 h-2 rounded-full {$generativePatternStatus === GenerativePatternStatusEnum.ACTIVE || $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED ? 'bg-green-500' : 'bg-red-500'} mr-1"></div>
+            {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
+              Generative Pattern
+            {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
+              Camera Connected
+            {:else}
+              No Input
+            {/if}
+          </div>
+        </div>
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
           <div class="w-full flex flex-col gap-4">
             <div class="flex justify-center items-center">
@@ -136,7 +148,13 @@
       </div>
     {/if}
     <div class="flex-1 min-w-[300px]">
-      <h3 class="subtitle">Final Output</h3>
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="subtitle mb-0">Final Output</h3>
+        <div class="text-secondary text-sm flex items-center">
+          <div class="w-2 h-2 rounded-full {$lcmLiveStatus === LCMLiveStatus.CONNECTED ? 'bg-green-500' : $lcmLiveStatus === LCMLiveStatus.INITIALIZING ? 'bg-yellow-500' : 'bg-red-500'} mr-1"></div>
+          {$lcmLiveStatus}
+        </div>
+      </div>
       <ImagePlayer />
     </div>
   </div>
