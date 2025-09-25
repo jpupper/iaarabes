@@ -3,6 +3,7 @@
   import CamInput from './InputSources/CamInput.svelte';
   import ShareInput from './InputSources/ShareInput.svelte';
   import GenerativeInput from './InputSources/GenerativeInput.svelte';
+  import { mediaDevices } from '$lib/mediaStream';
 
   type InputSource = {
     id: string;
@@ -101,10 +102,44 @@
 </script>
 
 <div class="module-container">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="title mb-0">Input Sources</h2>
+    <div class="text-secondary text-sm flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      Haz clic en una tarjeta para seleccionar esa fuente
+    </div>
+  </div>
 
   <div class="space-y-4">
     <!-- Componente de cámara con dropdown -->
-    <div class="input-source-card card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active' : ''}">
+    <div 
+      class="input-source-card card {selectedSourceId && selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? 'active' : ''}"
+      on:click={() => {
+        if (!selectedSourceId || selectedSourceId === 'screen' || selectedSourceId === 'generative') {
+          // Si hay cámaras disponibles, seleccionar la primera
+          const cameras = $mediaDevices || [];
+          if (cameras.length > 0) {
+            handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
+          } else {
+            console.log('No hay cámaras disponibles');
+          }
+        }
+      }}
+      role="button"
+      tabindex="0"
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (!selectedSourceId || selectedSourceId === 'screen' || selectedSourceId === 'generative') {
+            const cameras = $mediaDevices || [];
+            if (cameras.length > 0) {
+              handleCameraSelected(new CustomEvent('cameraSelected', { detail: { deviceId: cameras[0].deviceId } }));
+            } else {
+              console.log('No hay cámaras disponibles');
+            }
+          }
+        }
+      }}
+    >
       <CamInput 
         selectedDeviceId={selectedSourceId !== 'screen' && selectedSourceId !== 'generative' ? selectedSourceId : null}
         on:cameraSelected={handleCameraSelected}
@@ -112,7 +147,23 @@
       />
     </div>
 
-    <div class="input-source-card card {selectedSourceId === 'screen' ? 'active' : ''}">
+    <div 
+      class="input-source-card card {selectedSourceId === 'screen' ? 'active' : ''}"
+      on:click={() => {
+        if (!isScreenActive) {
+          handleScreenSelected();
+        }
+      }}
+      role="button"
+      tabindex="0"
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (!isScreenActive) {
+            handleScreenSelected();
+          }
+        }
+      }}
+    >
       <ShareInput 
         isActive={isScreenActive}
         on:screenSelected={handleScreenSelected}
@@ -120,7 +171,23 @@
       />
     </div>
 
-    <div class="input-source-card card {selectedSourceId === 'generative' ? 'active' : ''}">
+    <div 
+      class="input-source-card card {selectedSourceId === 'generative' ? 'active' : ''}"
+      on:click={() => {
+        if (!isGenerativeActive) {
+          handleGenerativeSelected();
+        }
+      }}
+      role="button"
+      tabindex="0"
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (!isGenerativeActive) {
+            handleGenerativeSelected();
+          }
+        }
+      }}
+    >
       <GenerativeInput 
         isActive={isGenerativeActive}
         on:generativeSelected={handleGenerativeSelected}

@@ -33,16 +33,19 @@
       🖥️
     </div>
     <div class="text-left">
-      <div class="font-medium text-black">Screen Share</div>
-      <div class="text-sm text-gray-600">
+      <div class="font-medium text-secondary">Screen Share</div>
+      <div class="text-sm text-secondary opacity-80">
         Desktop • 60fps
       </div>
     </div>
   </div>
   
   <button 
-    class="flex items-center gap-1 px-3 py-1 text-sm bg-white text-black rounded-md hover:bg-gray-100 border border-gray-300"
-    on:click={toggleScreenShare}
+    class="btn {isActive ? 'btn-primary' : 'btn-secondary'} btn-sm"
+    on:click={(e) => {
+      e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+      toggleScreenShare();
+    }}
   >
     {isActive ? 'Detener' : 'Iniciar'}
   </button>

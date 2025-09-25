@@ -81,7 +81,10 @@
       <select 
         id="shader-select" 
         class="select"
-        on:change={selectShader}
+        on:change={(e) => {
+          e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
+          selectShader(e);
+        }}
         value={$selectedShader?.id || ''}
       >
         {#if $AVAILABLE_SHADERS && $AVAILABLE_SHADERS.length > 0}
@@ -95,7 +98,10 @@
     </div>
     
     <Button 
-      on:click={toggleGenerative}
+      on:click={(e) => {
+        e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+        toggleGenerative();
+      }}
       variant={isActive ? 'primary' : 'secondary'}
       size="md"
     >
@@ -109,7 +115,10 @@
           <h4 class="card-title">Parámetros del Shader</h4>
           <button 
             class="btn btn-primary btn-sm"
-            on:click={() => showParameters = !showParameters}
+            on:click={(e) => {
+              e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+              showParameters = !showParameters;
+            }}
           >
             {showParameters ? 'Ocultar' : 'Mostrar'}
           </button>
@@ -121,7 +130,10 @@
               <span class="text-secondary">{$shaderParams.length} parámetros disponibles</span>
               <button 
                 class="btn btn-secondary btn-sm"
-                on:click={resetAllParams}
+                on:click={(e) => {
+                  e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+                  resetAllParams();
+                }}
               >
                 Restablecer valores
               </button>
@@ -161,6 +173,7 @@
                         id="param-{param.name}"
                         checked={Boolean(param.value)}
                         on:change={(e) => {
+                          e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
                           const target = e.currentTarget;
                           handleParamChange({ name: param.name, value: target.checked });
                         }}
@@ -188,6 +201,7 @@
                           step={param.step}
                           value={component}
                           on:input={(e) => {
+                            e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
                             const target = e.currentTarget;
                             handleVectorComponentChange({ name: param.name, index: i, value: parseFloat(target.value) });
                           }}
@@ -205,6 +219,7 @@
                       step={param.step}
                       value={Number(param.value)}
                       on:input={(e) => {
+                        e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
                         const target = e.currentTarget;
                         handleParamChange({ name: param.name, value: param.type === 'int' ? parseInt(target.value) : parseFloat(target.value) });
                       }}
