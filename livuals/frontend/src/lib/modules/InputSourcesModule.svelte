@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import CamInput from './InputSources/CamInput.svelte';
   import ShareInput from './InputSources/ShareInput.svelte';
   import GenerativeInput from './InputSources/GenerativeInput.svelte';
   import { mediaDevices, mediaStreamActions } from '$lib/mediaStream';
+  import { generativePatternActions, AVAILABLE_SHADERS, selectedShader } from '$lib/generativePattern';
 
   type InputSource = {
     id: string;
@@ -20,12 +22,21 @@
   
   function handleCameraSelected(event: CustomEvent<{deviceId: string}>) {
     selectedSourceId = event.detail.deviceId;
+    
+    // Si la pantalla estaba activa, desactivarla
     if (isScreenActive) {
       isScreenActive = false;
     }
+    
+    // Si el patrón generativo estaba activo, detenerlo explícitamente
     if (isGenerativeActive) {
       isGenerativeActive = false;
+      generativePatternActions.stop();
+      console.log('Generative pattern deactivated from camera selection');
     }
+    
+    // Asegurarse de que la cámara esté activa
+    mediaStreamActions.start(event.detail.deviceId);
   }
   
   function handleCameraDeselected() {
@@ -39,7 +50,13 @@
     if (!isScreenActive) {
       selectedSourceId = 'screen';
       isScreenActive = true;
-      isGenerativeActive = false;
+      
+      // Si el patrón generativo estaba activo, detenerlo explícitamente
+      if (isGenerativeActive) {
+        isGenerativeActive = false;
+        generativePatternActions.stop();
+        console.log('Generative pattern deactivated from screen selection');
+      }
       
       // Iniciar automáticamente la captura de pantalla
       mediaStreamActions.startScreenCapture();
@@ -59,6 +76,32 @@
     isScreenActive = false;
     // Ensure we're properly activating the generative pattern
     console.log('Generative pattern selected');
+    
+    // Start the generative pattern
+    generativePatternActions.start();
+    
+    // Check if a shader is already selected, if not select the first available one
+    const currentShader = get(selectedShader);
+    const availableShaders = get(AVAILABLE_SHADERS);
+    
+    if ((!currentShader || !currentShader.id) && availableShaders.length > 0) {
+      console.log('No shader selected, selecting the first available one:', availableShaders[0]);
+      generativePatternActions.selectShader(availableShaders[0].id);
+    } else if (currentShader && currentShader.id) {
+      // If a shader is already selected, reload it to ensure parameters are loaded
+      console.log('Reloading current shader:', currentShader);
+      generativePatternActions.loadShaderSource(currentShader.id);
+    } else if (availableShaders.length === 0) {
+      // If no shaders are available, load them first
+      console.log('No shaders available, loading shaders...');
+      generativePatternActions.loadShaders().then(() => {
+        const newAvailableShaders = get(AVAILABLE_SHADERS);
+        if (newAvailableShaders.length > 0) {
+          console.log('Shaders loaded, selecting the first one:', newAvailableShaders[0]);
+          generativePatternActions.selectShader(newAvailableShaders[0].id);
+        }
+      });
+    }
   }
 
   function handleGenerativeDeselected() {

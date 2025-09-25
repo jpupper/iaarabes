@@ -132,6 +132,10 @@ export const generativePatternActions = {
         try {
             console.log(`Intentando cargar shader ${shaderId}...`);
             
+            // Importar el módulo de parámetros de shader al inicio para evitar problemas
+            const shaderParamsModule = await import('./shaderParams');
+            const shaderParamsActions = shaderParamsModule.shaderParamsActions;
+            
             // Intentar cargar desde el backend
             try {
                 // Usar directamente la URL que sabemos que funciona
@@ -146,18 +150,15 @@ export const generativePatternActions = {
                     console.log(`Shader ${shaderId} cargado:`, sources);
                     
                     if (sources && sources.fragmentShaderSource && sources.vertexShaderSource) {
+                        // Actualizar las fuentes de shader
                         shaderSources.set({
                             fragmentShaderSource: sources.fragmentShaderSource,
                             vertexShaderSource: sources.vertexShaderSource
                         });
                         
-                        // Importar el módulo de parámetros de shader y cargar los parámetros
-                        import('./shaderParams').then(module => {
-                            const shaderParamsActions = module.shaderParamsActions;
-                            console.log('Analizando parámetros del shader...');
-                            shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
-                        });
-                        
+                        // Cargar los parámetros del shader inmediatamente
+                        console.log('Analizando parámetros del shader...');
+                        shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
                         return;
                     }
                 }
@@ -245,17 +246,15 @@ export const generativePatternActions = {
                     }
                 `;
                 
+                // Actualizar las fuentes de shader
                 shaderSources.set({
                     fragmentShaderSource: fragmentSource,
                     vertexShaderSource: vertexSource
                 });
                 
-                // Importar el módulo de parámetros de shader y cargar los parámetros
-                import('./shaderParams').then(module => {
-                    const shaderParamsActions = module.shaderParamsActions;
-                    console.log('Analizando parámetros del shader por defecto...');
-                    shaderParamsActions.loadParamsFromShader(fragmentSource);
-                });
+                // Cargar los parámetros del shader inmediatamente
+                console.log('Analizando parámetros del shader por defecto...');
+                shaderParamsActions.loadParamsFromShader(fragmentSource);
             }
         } catch (error) {
             console.error(`Error crítico al cargar el shader ${shaderId}:`, error);

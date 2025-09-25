@@ -133,17 +133,25 @@
             {/if}
           </div>
         </div>
+        <!-- Mostrar el componente adecuado según el estado de las fuentes -->
         {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
           <div class="w-full flex flex-col gap-4">
             <div class="flex justify-center items-center">
               <GenerativeShader />
             </div>
           </div>
-        {:else}
+        {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
           <VideoInput
             width={Number(pipelineParams.width.default)}
             height={Number(pipelineParams.height.default)}
           />
+        {:else}
+          <div class="w-full flex flex-col gap-4 items-center justify-center p-8 bg-gray-800 rounded-lg">
+            <div class="text-secondary text-center">
+              <p>No hay fuente de entrada activa</p>
+              <p class="text-sm mt-2">Selecciona una fuente de entrada en el panel "Input Sources"</p>
+            </div>
+          </div>
         {/if}
       </div>
     {/if}

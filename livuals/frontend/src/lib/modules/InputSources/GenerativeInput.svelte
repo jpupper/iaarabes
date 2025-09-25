@@ -3,6 +3,7 @@
   import Button from '$lib/components/Button.svelte';
   import { generativePatternActions, AVAILABLE_SHADERS, selectedShader, shaderSources } from '$lib/generativePattern';
   import { shaderParams, shaderParamsActions, parameterChanged } from '$lib/shaderParams';
+  import { mediaStreamActions } from '$lib/mediaStream';
   import { get } from 'svelte/store';
 
   const dispatch = createEventDispatcher();
@@ -25,34 +26,100 @@
     }
   });
 
-  function toggleGenerative() {
+  async function toggleGenerative() {
     isActive = !isActive;
     
     if (isActive) {
+      // Detener cualquier stream de cámara o pantalla activo
+      mediaStreamActions.stop();
+      
+      // Iniciar el patrón generativo
       generativePatternActions.start();
       dispatch('generativeSelected');
+      
+      // Ensure a shader is selected and loaded
+      await ensureShaderSelected();
+      
+      console.log('Generative pattern activated, media streams stopped');
     } else {
       generativePatternActions.stop();
       dispatch('generativeDeselected');
+      console.log('Generative pattern deactivated');
+    }
+  }
+  
+  // Helper function to ensure a shader is selected and loaded
+  async function ensureShaderSelected() {
+    console.log('Ensuring shader is selected...');
+    const currentShader = get(selectedShader);
+    const availableShaders = get(AVAILABLE_SHADERS);
+    
+    if ((!currentShader || !currentShader.id) && availableShaders.length > 0) {
+      console.log('No shader selected, selecting the first available one:', availableShaders[0]);
+      await generativePatternActions.selectShader(availableShaders[0].id);
+    } else if (currentShader && currentShader.id) {
+      // If a shader is already selected, reload it to ensure parameters are loaded
+      console.log('Reloading current shader:', currentShader);
+      await generativePatternActions.loadShaderSource(currentShader.id);
+    } else if (availableShaders.length === 0) {
+      // If no shaders are available, load them first
+      console.log('No shaders available, loading shaders...');
+      await generativePatternActions.loadShaders();
+      const newAvailableShaders = get(AVAILABLE_SHADERS);
+      if (newAvailableShaders.length > 0) {
+        console.log('Shaders loaded, selecting the first one:', newAvailableShaders[0]);
+        await generativePatternActions.selectShader(newAvailableShaders[0].id);
+      }
     }
   }
 
   // Ensure the component is activated when mounted if isActive is true
-  onMount(() => {
+  onMount(async () => {
     if (isActive) {
       generativePatternActions.start();
       dispatch('generativeSelected');
+      
+      // Ensure a shader is selected and loaded
+      await ensureShaderSelected();
     }
   });
 
   async function selectShader(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    await generativePatternActions.selectShader(select.value);
-    
-    // Extraer los parámetros del shader seleccionado
-    const sources = get(shaderSources);
-    if (sources && sources.fragmentShaderSource) {
-      shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
+    try {
+      const select = event.target as HTMLSelectElement;
+      const shaderId = select.value;
+      console.log('Selecting shader:', shaderId);
+      
+      // Verificar que el shader existe en la lista de shaders disponibles
+      const availableShaders = get(AVAILABLE_SHADERS);
+      const shaderExists = availableShaders.some(s => s.id === shaderId);
+      
+      if (!shaderExists) {
+        console.warn(`El shader ${shaderId} no existe en la lista de shaders disponibles`);
+        console.log('Shaders disponibles:', availableShaders);
+      }
+      
+      // Seleccionar el shader
+      const success = await generativePatternActions.selectShader(shaderId);
+      console.log(`Shader ${shaderId} seleccionado con éxito:`, success);
+      
+      // Extraer los parámetros del shader seleccionado
+      const sources = get(shaderSources);
+      console.log('Fuentes de shader después de seleccionar:', sources);
+      
+      if (sources && sources.fragmentShaderSource) {
+        console.log('Loading shader parameters from source');
+        const params = shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
+        console.log('Parámetros cargados:', params);
+      } else {
+        console.warn('No shader source available to load parameters from');
+      }
+      
+      // Verificar que el shader se haya seleccionado correctamente
+      const currentShader = get(selectedShader);
+      console.log('Shader actual después de seleccionar:', currentShader);
+    } catch (error) {
+      console.error('Error al seleccionar shader:', error);
     }
   }
   

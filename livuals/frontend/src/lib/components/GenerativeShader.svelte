@@ -8,7 +8,7 @@
   let canvas: HTMLCanvasElement;
   let gl: WebGLRenderingContext | null = null;
   let program: WebGLProgram | null = null;
-  let animationFrameId: number;
+  let animationFrameId: number | null = null;
   let startTime = Date.now();
   
   let fragmentShaderSource = '';
@@ -187,6 +187,20 @@
     // Aplicar los parámetros al shader
     shaderParamsActions.applyParamsToShader(gl, program);
   }
+  
+  // Observar cambios en el estado del patrón generativo
+  $: if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE && !animationFrameId) {
+    console.log('Generative pattern activated, starting animation');
+    // Si el patrón generativo se activa y no hay animación en curso, iniciarla
+    if (gl && program) {
+      animationFrameId = requestAnimationFrame(render);
+    }
+  } else if ($generativePatternStatus === GenerativePatternStatusEnum.INACTIVE && animationFrameId) {
+    console.log('Generative pattern deactivated, stopping animation');
+    // Si el patrón generativo se desactiva y hay una animación en curso, detenerla
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
 
   onMount(async () => {
     try {
@@ -235,6 +249,13 @@
   onDestroy(() => {
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+    
+    // Limpiar recursos de WebGL
+    if (gl && program) {
+      gl.deleteProgram(program);
+      program = null;
     }
   });
 </script>
