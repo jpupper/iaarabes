@@ -153,7 +153,7 @@
 <main class="main-layout">
   <Warning bind:message={warningMessage}></Warning>
   <div class="flex justify-center">
-    <img src="logo.png" alt="Logo" class="h-12" />
+    <img src="/Imagotipoblanco.svg" alt="Logo" class="h-12" />
   </div>
   
   <article class="module-container text-center">

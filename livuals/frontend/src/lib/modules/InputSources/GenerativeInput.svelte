@@ -37,6 +37,14 @@
     }
   }
 
+  // Ensure the component is activated when mounted if isActive is true
+  onMount(() => {
+    if (isActive) {
+      generativePatternActions.start();
+      dispatch('generativeSelected');
+    }
+  });
+
   async function selectShader(event: Event) {
     const select = event.target as HTMLSelectElement;
     await generativePatternActions.selectShader(select.value);
@@ -71,42 +79,58 @@
   }
 </script>
 
-<div class="space-y-2">
-  <h3 class="subtitle">Patrón Generativo</h3>
-  <p class="text-secondary">Genera patrones visuales usando shaders</p>
-  
-  <div class="flex flex-col space-y-3 mt-2">
-    <div>
-      <label for="shader-select" class="block text-secondary mb-1">Seleccionar Shader:</label>
-      <select 
-        id="shader-select" 
-        class="select"
-        on:change={(e) => {
-          e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
-          selectShader(e);
-        }}
-        value={$selectedShader?.id || ''}
-      >
-        {#if $AVAILABLE_SHADERS && $AVAILABLE_SHADERS.length > 0}
-          {#each $AVAILABLE_SHADERS as shader}
-            <option value={shader.id}>{shader.name}</option>
-          {/each}
-        {:else}
-          <option value="" disabled>Cargando shaders...</option>
-        {/if}
-      </select>
+<div class="w-full flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="text-xl">
+      🎨
     </div>
-    
-    <Button 
+    <div class="text-left">
+      <div class="font-medium text-secondary">Patrón Generativo</div>
+      <div class="text-sm text-secondary opacity-80">
+        1280x720 • 60fps
+      </div>
+    </div>
+  </div>
+  
+  <div class="relative">
+    <button 
+      class="btn {isActive ? 'btn-primary' : 'btn-secondary'} btn-sm"
       on:click={(e) => {
         e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
         toggleGenerative();
       }}
-      variant={isActive ? 'primary' : 'secondary'}
-      size="md"
     >
       {isActive ? 'Seleccionado' : 'Seleccionar'}
-    </Button>
+    </button>
+  </div>
+</div>
+
+{#if isActive}
+<div class="mt-4 border-t pt-4">
+  <div class="flex justify-between items-center mb-3">
+    <h4 class="card-title">Configuración</h4>
+  </div>
+  
+  <div>
+    <label for="shader-select" class="block text-secondary mb-1">Seleccionar Shader:</label>
+    <select 
+      id="shader-select" 
+      class="select w-full"
+      on:change={(e) => {
+        e.stopPropagation(); // Evitar que el cambio se propague a la tarjeta
+        selectShader(e);
+      }}
+      value={$selectedShader?.id || ''}
+    >
+      {#if $AVAILABLE_SHADERS && $AVAILABLE_SHADERS.length > 0}
+        {#each $AVAILABLE_SHADERS as shader}
+          <option value={shader.id}>{shader.name}</option>
+        {/each}
+      {:else}
+        <option value="" disabled>Cargando shaders...</option>
+      {/if}
+    </select>
+  </div>
     
     <!-- Sección de parámetros del shader -->
     {#if $shaderParams && $shaderParams.length > 0}
@@ -234,4 +258,4 @@
       </div>
     {/if}
   </div>
-</div>
+{/if}

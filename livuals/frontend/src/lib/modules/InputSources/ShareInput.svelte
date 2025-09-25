@@ -1,6 +1,6 @@
 <script lang="ts">
   import { mediaStreamActions, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   
   const dispatch = createEventDispatcher();
   
@@ -27,9 +27,11 @@
   }
   
   // Iniciar la captura de pantalla cuando se monta el componente si está activo
-  $: if (isActive) {
-    startScreenShare();
-  }
+  onMount(() => {
+    if (isActive) {
+      startScreenShare();
+    }
+  });
 </script>
 
 <div class="w-full flex items-center justify-between">

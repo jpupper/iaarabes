@@ -35,12 +35,15 @@
   }
   
   function handleScreenSelected() {
-    selectedSourceId = 'screen';
-    isScreenActive = true;
-    isGenerativeActive = false;
-    
-    // Iniciar automáticamente la captura de pantalla
-    mediaStreamActions.startScreenCapture();
+    // Only proceed if not already active to avoid multiple dialog prompts
+    if (!isScreenActive) {
+      selectedSourceId = 'screen';
+      isScreenActive = true;
+      isGenerativeActive = false;
+      
+      // Iniciar automáticamente la captura de pantalla
+      mediaStreamActions.startScreenCapture();
+    }
   }
   
   function handleScreenDeselected() {
@@ -54,6 +57,8 @@
     selectedSourceId = 'generative';
     isGenerativeActive = true;
     isScreenActive = false;
+    // Ensure we're properly activating the generative pattern
+    console.log('Generative pattern selected');
   }
 
   function handleGenerativeDeselected() {
@@ -167,7 +172,6 @@
     >
       <ShareInput 
         isActive={isScreenActive}
-        on:screenSelected={handleScreenSelected}
         on:screenDeselected={handleScreenDeselected}
       />
     </div>
