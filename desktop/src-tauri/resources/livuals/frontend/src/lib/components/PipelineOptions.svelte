@@ -10,6 +10,7 @@
 
   export let pipelineParams: Fields;
   export let disabled: boolean = false;
+  export let shouldBlockSliders: boolean = false;
 
   $: advanceOptions = Object.values(pipelineParams)?.filter(
     (e) => e?.hide == true && e?.disabled !== true
@@ -22,7 +23,11 @@
     {#if featuredOptions}
       {#each featuredOptions as params}
         {#if params.field === FieldType.RANGE}
-          <InputRange {params} bind:value={$pipelineValues[params.id]} {disabled}></InputRange>
+          <InputRange 
+            {params} 
+            bind:value={$pipelineValues[params.id]} 
+            disabled={params.id === 'width' || params.id === 'height' ? (disabled || shouldBlockSliders) : disabled}
+          ></InputRange>
         {:else if params.field === FieldType.SEED}
           <SeedInput {params} bind:value={$pipelineValues[params.id]} {disabled}></SeedInput>
         {:else if params.field === FieldType.TEXTAREA}
@@ -37,7 +42,7 @@
   </div>
   {#if advanceOptions && advanceOptions.length > 0}
     <details>
-      <summary class="cursor-pointer font-medium">Advanced Options</summary>
+      <summary class="cursor-pointer font-medium text-accent">Advanced Options</summary>
       <div
         class="grid grid-cols-1 items-center gap-3 {Object.values(pipelineParams).length > 5
           ? 'sm:grid-cols-2'
@@ -45,7 +50,11 @@
       >
         {#each advanceOptions as params}
           {#if params.field === FieldType.RANGE}
-            <InputRange {params} bind:value={$pipelineValues[params.id]} {disabled}></InputRange>
+            <InputRange 
+              {params} 
+              bind:value={$pipelineValues[params.id]} 
+              disabled={params.id === 'width' || params.id === 'height' ? (disabled || shouldBlockSliders) : disabled}
+            ></InputRange>
           {:else if params.field === FieldType.SEED}
             <SeedInput {params} bind:value={$pipelineValues[params.id]} {disabled}></SeedInput>
           {:else if params.field === FieldType.TEXTAREA}

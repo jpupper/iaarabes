@@ -59,7 +59,8 @@ taesd_model = "madebyollin/taesd"
 default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
-page_content = """<p id="page_content">VJING using AI</p>"""
+# Definir page_content como una cadena vacía para evitar errores
+page_content = """"""
 
 
 class Pipeline:
@@ -125,26 +126,29 @@ class Pipeline:
         self.transition_progress = 0.0
         self.old_steps_config = None
         self.transition_frames = 10
+        self.current_params = params
         
-        # Inicializar Spout solo en Windows
+        # Configurar dimensiones para Spout y StreamDiffusion
         self.spout_sender = None
-        if SPOUT_AVAILABLE:
-            try:
-                # Inicializar Spout con las dimensiones exactas
-                self.spout_width = params.width
-                self.spout_height = params.height
-                self.spout_sender = SpoutSender("LivualsOutput", self.spout_width, self.spout_height, GL_RGBA)
-            except Exception as e:
-                print(f"Warning: Could not initialize Spout: {e}")
-                self.spout_sender = None
+        self.spout_width = params.width
+        self.spout_height = params.height
 
-        if device.type == "cuda":
+        # Inicializar StreamDiffusion primero
+        self.initstreamdiffusion(params)
+        
+        # Inicializar Spout solo después de que StreamDiffusion esté activo
+        if self.ready:
+            self.initspout()
+        
+    def initstreamdiffusion(self, params):
+        """Inicializa o reinicializa StreamDiffusion con los parámetros actuales"""
+        if self.device.type == "cuda":
             # Usar StreamDiffusion solo en CUDA para evitar dependencias CUDA en CPU/MPS
             self.stream = StreamDiffusionWrapper(
                 model_id_or_path=base_model,
-                use_tiny_vae=args.taesd,
-                device=device,
-                dtype=torch_dtype,
+                use_tiny_vae=self.args.taesd,
+                device=self.device,
+                dtype=self.torch_dtype,
                 t_index_list=self.steps_config.t_index_list,
                 frame_buffer_size=1,
                 width=params.width,
@@ -153,12 +157,12 @@ class Pipeline:
                 output_type="pil",
                 warmup=10,
                 vae_id=None,
-                acceleration=args.acceleration,
+                acceleration=self.args.acceleration,
                 mode="img2img",
                 use_denoising_batch=True,
                 cfg_type="none",
-                use_safety_checker=args.safety_checker,
-                engine_dir=args.engine_dir,
+                use_safety_checker=self.args.safety_checker,
+                engine_dir=self.args.engine_dir,
             )
             self.last_prompt = default_prompt
             self.stream.prepare(
@@ -174,16 +178,185 @@ class Pipeline:
                 raise RuntimeError("diffusers no está disponible para el modo CPU/MPS")
             self._diffusers_pipe = AutoPipelineForImage2Image.from_pretrained(
                 base_model,
-                torch_dtype=torch_dtype,
-                safety_checker=None if not args.safety_checker else None,
+                torch_dtype=self.torch_dtype,
+                safety_checker=None if not self.args.safety_checker else None,
             )
-            self._diffusers_pipe.to(device)
+            self._diffusers_pipe.to(self.device)
             self.ready = True
+            
+    def reiniciar_streamdiffusion(self, params):
+        """Reinicia StreamDiffusion con nuevos parámetros y actualiza Spout si es necesario"""
+        # Guardar estado anterior
+        old_width = self.spout_width
+        old_height = self.spout_height
+        
+        # Actualizar dimensiones con los valores actuales de los sliders
+        self.spout_width = params.width
+        self.spout_height = params.height
+        self.current_params = params
+        
+        # Verificar si cambió la resolución
+        resolucion_cambiada = (old_width != self.spout_width) or (old_height != self.spout_height)
+        
+        if resolucion_cambiada:
+            print(f"Resolución cambiada de {old_width}x{old_height} a {self.spout_width}x{self.spout_height}")
+            
+            # Cerrar completamente Spout antes de reinicializarlo
+            self.close_spout()
+            
+            # Reinicializar StreamDiffusion primero con las nuevas dimensiones
+            if hasattr(self, 'stream'):
+                print("Reinicializando StreamDiffusion con nueva resolución...")
+                self.initstreamdiffusion(params)
+                
+                # Reinicializar Spout solo si StreamDiffusion está activo
+                if self.ready:
+                    print("Reinicializando Spout con las nuevas dimensiones...")
+                    self.initspout()
+            else:
+                print("No se encontró StreamDiffusion para reinicializar")
+            
+        return resolucion_cambiada
+        
+    def close_spout(self):
+        """Cierra completamente el SpoutSender y libera recursos"""
+        if not SPOUT_AVAILABLE:
+            return
+            
+        if self.spout_sender is not None:
+            print("Cerrando SpoutSender...")
+            try:
+                # Intentar liberar el SpoutSender
+                self.spout_sender.release()
+                print("SpoutSender liberado correctamente")
+            except Exception as e:
+                print(f"Error al liberar SpoutSender: {e}")
+            finally:
+                # Asegurarse de que el SpoutSender se establezca a None
+                self.spout_sender = None
+                
+                # Resetear las dimensiones actuales
+                if hasattr(self, 'spout_width_current'):
+                    delattr(self, 'spout_width_current')
+                if hasattr(self, 'spout_height_current'):
+                    delattr(self, 'spout_height_current')
+                    
+                # Pequeña pausa para asegurar que los recursos se liberen completamente
+                import time
+                time.sleep(0.5)
+                
+    def release_resources(self):
+        """Libera completamente los recursos de StreamDiffusion y Spout"""
+        print("Liberando recursos de StreamDiffusion y Spout...")
+        
+        # Primero cerrar Spout
+        self.close_spout()
+        
+        # Liberar recursos de StreamDiffusion
+        if hasattr(self, 'stream'):
+            try:
+                print("Liberando recursos de StreamDiffusion...")
+                # Liberar el modelo y limpiar la memoria CUDA
+                del self.stream
+                if self.device.type == "cuda":
+                    torch.cuda.empty_cache()
+                    print("Memoria CUDA liberada")
+                # Eliminar la referencia al objeto
+                delattr(self, 'stream')
+                print("StreamDiffusion liberado correctamente")
+            except Exception as e:
+                print(f"Error al liberar StreamDiffusion: {e}")
+        
+        # Liberar otros recursos
+        self.last_valid_image = None
+        self.ready = False
+        
+        # Pequeña pausa para asegurar que los recursos se liberen completamente
+        import time
+        time.sleep(1.0)
+        print("Todos los recursos liberados correctamente")
+    
+    def restart_resources(self):
+        """Reinicia los recursos de StreamDiffusion y Spout después de haberlos liberado"""
+        print("Reiniciando recursos de StreamDiffusion y Spout...")
+        
+        # Verificar que los recursos estén liberados
+        if hasattr(self, 'stream'):
+            print("Los recursos de StreamDiffusion ya están inicializados")
+            return
+        
+        # Reinicializar StreamDiffusion con los parámetros actuales
+        if self.current_params is not None:
+            print("Reinicializando StreamDiffusion...")
+            self.initstreamdiffusion(self.current_params)
+            
+            # Reinicializar Spout si StreamDiffusion se inicializó correctamente
+            if self.ready:
+                print("Reinicializando Spout...")
+                self.initspout()
+                print("Recursos reiniciados correctamente")
+            else:
+                print("No se pudo reinicializar StreamDiffusion")
+        else:
+            print("No hay parámetros disponibles para reinicializar")
 
+    def initspout(self):
+        """Inicializa el emisor Spout con las dimensiones actuales
+        Si ya existe un SpoutSender, verifica si la resolución cambió.
+        Si cambió, libera el anterior y crea uno nuevo.
+        """
+        if not SPOUT_AVAILABLE:
+            return
+            
+        try:
+            # Verificar si ya existe un SpoutSender y si la resolución cambió
+            if self.spout_sender is not None:
+                # Si la resolución es la misma, mantener el SpoutSender existente
+                if hasattr(self, 'spout_width_current') and hasattr(self, 'spout_height_current') and \
+                   self.spout_width == self.spout_width_current and self.spout_height == self.spout_height_current:
+                    print(f"Manteniendo SpoutSender existente con resolución {self.spout_width}x{self.spout_height}")
+                    return
+                    
+                # Si la resolución cambió, liberar el SpoutSender existente
+                print(f"Resolución cambiada de {getattr(self, 'spout_width_current', 'N/A')}x{getattr(self, 'spout_height_current', 'N/A')} a {self.spout_width}x{self.spout_height}")
+                print("Liberando SpoutSender anterior...")
+                
+                try:
+                    # Intentar liberar el SpoutSender con manejo de excepciones
+                    self.spout_sender.release()
+                except Exception as e:
+                    print(f"Error al liberar SpoutSender: {e}")
+                finally:
+                    # Asegurarse de que el SpoutSender se establezca a None
+                    self.spout_sender = None
+                    
+                # Pequeña pausa para asegurar que los recursos se liberen completamente
+                import time
+                time.sleep(0.5)
+            
+            # Inicializar Spout con las dimensiones actuales
+            print(f"Inicializando SpoutSender con resolución {self.spout_width}x{self.spout_height}")
+            
+            # Crear un nuevo SpoutSender con un nombre único basado en timestamp
+            import time
+            spout_name = f"LivualsOutput_{int(time.time())}"  # Nombre único para evitar conflictos
+            self.spout_sender = SpoutSender(spout_name, self.spout_width, self.spout_height, GL_RGBA)
+            print(f"Nuevo SpoutSender creado con nombre: {spout_name}")
+            
+            # Guardar la resolución actual para futuras comparaciones
+            self.spout_width_current = self.spout_width
+            self.spout_height_current = self.spout_height
+            
+        except Exception as e:
+            print(f"Warning: Could not initialize Spout: {e}")
+            self.spout_sender = None
+    
     def sendSpout(self, image):
         """Enviar imagen a Spout"""
-        # Si no estamos en Windows o Spout no está disponible, no hacer nada
-        if not SPOUT_AVAILABLE or self.spout_sender is None:
+        # Si no estamos en Windows, Spout no está disponible, StreamDiffusion no está activo o Spout no está inicializado, no hacer nada
+        if not SPOUT_AVAILABLE or self.spout_sender is None or not self.ready:
+            if not self.ready and SPOUT_AVAILABLE and self.spout_sender is not None:
+                print("StreamDiffusion no está activo, omitiendo envío a Spout")
             return
             
         if not isinstance(image, Image.Image):
@@ -237,6 +410,24 @@ class Pipeline:
         self.busy = True
         try:
             current_output = None
+            
+            # Verificar si necesitamos reiniciar los recursos (después de un stop)
+            if not self.ready and not hasattr(self, "stream"):
+                print("La aplicación fue detenida previamente, intentando reiniciar recursos...")
+                self.restart_resources()
+                
+            # Verificar si la resolución o los parámetros han cambiado
+            resolucion_cambiada = False
+            if hasattr(self, 'current_params'):
+                if (self.current_params.width != params.width or 
+                    self.current_params.height != params.height):
+                    # La resolución cambió, reiniciar StreamDiffusion y Spout
+                    resolucion_cambiada = self.reiniciar_streamdiffusion(params)
+                elif self.current_params.steps != params.steps:
+                    # Solo actualizamos los parámetros actuales
+                    self.current_params = params
+            else:
+                self.current_params = params
             
             # Normal processing first
             if hasattr(self, "stream") and self.device.type == "cuda":
@@ -294,11 +485,29 @@ class Pipeline:
             self.last_valid_image = current_output
             
             # Enviar a Spout si está disponible, estamos en Windows y está habilitado
-            if SPOUT_AVAILABLE and self.spout_sender is not None and getattr(params, 'enableSpout', True):
+            if SPOUT_AVAILABLE and getattr(params, 'enableSpout', True):
                 try:
-                    self.sendSpout(current_output)
+                    # Verificar si el SpoutSender es None o si ha ocurrido un error previo
+                    if self.spout_sender is None and self.ready:
+                        print("SpoutSender no está inicializado, intentando reinicializar...")
+                        self.initspout()
+                        
+                    # Intentar enviar la imagen a través de Spout
+                    if self.spout_sender is not None:
+                        self.sendSpout(current_output)
+                    else:
+                        print("No se pudo reinicializar SpoutSender, omitiendo envío a Spout")
+                        
                 except Exception as e:
                     print(f"Warning: Failed to send to Spout: {e}")
+                    # Si hay un error al enviar, intentar reinicializar Spout
+                    print("Intentando reinicializar Spout después del error...")
+                    try:
+                        self.close_spout()
+                        self.initspout()
+                    except Exception as reinit_error:
+                        print(f"Error al reinicializar Spout: {reinit_error}")
+                        self.spout_sender = None
             
             return current_output
             

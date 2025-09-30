@@ -8,9 +8,15 @@
     onFrameChangeStore,
     mediaStream
   } from '$lib/mediaStream';
-  export let width = 512;
-  export let height = 512;
-  const size = { width, height };
+  import { canvasDimensions } from '$lib/canvasDimensions';
+  
+  export let width = $canvasDimensions.width;
+  export let height = $canvasDimensions.height;
+  
+  // Usar el store para mantener el tamaño actualizado
+  $: width = $canvasDimensions.width;
+  $: height = $canvasDimensions.height;
+  $: size = { width, height };
 
   let videoEl: HTMLVideoElement;
   let canvasEl: HTMLCanvasElement;
@@ -75,7 +81,7 @@
   }
 </script>
 
-<div class="relative mx-auto max-w-lg overflow-hidden rounded-lg border border-slate-300">
+<div class="relative mx-auto overflow-hidden rounded-lg border border-slate-300" style="max-width: {$canvasDimensions.width}px; max-height: {$canvasDimensions.height}px;">
   <div class="relative z-10 aspect-square w-full object-cover">
     <video
       class="pointer-events-none aspect-square w-full object-cover"
@@ -90,13 +96,16 @@
     ></video>
     <canvas bind:this={canvasEl} class="absolute left-0 top-0 aspect-square w-full object-cover"
     ></canvas>
-  </div>
-  <div class="absolute left-0 top-0 flex aspect-square w-full items-center justify-center">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 448" class="w-40 p-5 opacity-20">
-      <path
-        fill="currentColor"
-        d="M224 256a128 128 0 1 0 0-256 128 128 0 1 0 0 256zm-45.7 48A178.3 178.3 0 0 0 0 482.3 29.7 29.7 0 0 0 29.7 512h388.6a29.7 29.7 0 0 0 29.7-29.7c0-98.5-79.8-178.3-178.3-178.3h-91.4z"
-      />
-    </svg>
+    
+    <!-- Mensaje de espera cuando no hay input activo -->
+    {#if !$mediaStream || $mediaStreamStatus !== MediaStreamStatusEnum.CONNECTED}
+      <div class="absolute inset-0 flex items-center justify-center bg-primary bg-opacity-80">
+        <div class="text-center p-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg>
+          <p class="text-secondary font-medium">Waiting for input source...</p>
+          <p class="text-secondary text-sm opacity-80 mt-1">Select a camera or screen to share</p>
+        </div>
+      </div>
+    {/if}
   </div>
 </div>

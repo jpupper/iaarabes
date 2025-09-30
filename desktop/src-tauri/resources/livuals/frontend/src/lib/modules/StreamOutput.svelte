@@ -1,11 +1,16 @@
 <script lang="ts">
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
-  import { mediaStreamActions, onFrameChangeStore } from '$lib/mediaStream';
+  import { mediaStreamActions, onFrameChangeStore, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
+  import { generativePatternStatus, generativeFrameStore, GenerativePatternStatusEnum } from '$lib/generativePattern';
   import { getPipelineValues } from '$lib/store';
+  import { widthHeightSlidersLocked } from '$lib/sliderStore';
+  import { canvasDimensions, canvasDimensionsActions } from '$lib/canvasDimensions';
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
+  import GenerativeShader from '$lib/components/GenerativeShader.svelte';
   import Checkbox from '$lib/components/Checkbox.svelte';
+  import CanvasSizeControl from '$lib/components/CanvasSizeControl.svelte';
   import { FieldType } from '$lib/types';
   
   export let isImageMode: boolean = false;
@@ -17,6 +22,14 @@
   let enableSpout = true;
   
   $: isLCMRunning = $lcmLiveStatus !== LCMLiveStatus.DISCONNECTED;
+  // Actualizar el store widthHeightSlidersLocked cuando cambia el estado
+  $: {
+    if (isLCMRunning || $lcmLiveStatus === LCMLiveStatus.INITIALIZING) {
+      widthHeightSlidersLocked.set(true);
+    } else {
+      widthHeightSlidersLocked.set(false);
+    }
+  }
   $: if ($lcmLiveStatus === LCMLiveStatus.TIMEOUT) {
     warningMessage = 'Session timed out. Please try again.';
   }
@@ -27,7 +40,12 @@
     pipelineValues.enableSpout = enableSpout;
     
     if (isImageMode) {
-      return [pipelineValues, $onFrameChangeStore?.blob];
+      // Si el patrón generativo está activo, usar ese frame en lugar del de la cámara
+      if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE) {
+        return [pipelineValues, $generativeFrameStore?.blob];
+      } else {
+        return [pipelineValues, $onFrameChangeStore?.blob];
+      }
     } else {
       return [pipelineValues];
     }
@@ -61,10 +79,20 @@
       const fd = new FormData();
       fd.append('params', JSON.stringify(params));
       if (isImageMode) {
-        const blob = $onFrameChangeStore?.blob;
-        if (!blob || blob.size === 0) {
-          warningMessage = 'No hay frame de cámara disponible todavía.';
-          return;
+        // Si el patrón generativo está activo, usar ese frame para el snapshot
+        let blob;
+        if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE) {
+          blob = $generativeFrameStore?.blob;
+          if (!blob || blob.size === 0) {
+            warningMessage = 'No hay frame generativo disponible todavía.';
+            return;
+          }
+        } else {
+          blob = $onFrameChangeStore?.blob;
+          if (!blob || blob.size === 0) {
+            warningMessage = 'No hay frame de cámara disponible todavía.';
+            return;
+          }
         }
         fd.append('image', blob, 'input.jpg');
       }
@@ -87,32 +115,85 @@
 </script>
 
 <div class="flex flex-col gap-6 w-full">
-  <h2 class="text-xl font-bold">Stream Output</h2>
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  <div class="flex flex-wrap gap-4">
     {#if isImageMode}
-      <div class="sm:col-start-1">
-        <VideoInput
-          width={Number(pipelineParams.width.default)}
-          height={Number(pipelineParams.height.default)}
-        />
+      <div class="flex-1 min-w-[300px]">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="subtitle mb-0">Input source</h3>
+          <div class="text-secondary text-sm flex items-center">
+            <div class="w-2 h-2 rounded-full {$generativePatternStatus === GenerativePatternStatusEnum.ACTIVE || $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED ? 'bg-green-500' : 'bg-red-500'} mr-1"></div>
+            {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
+              Generative Pattern
+            {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
+              Camera Connected
+            {:else}
+              No Input
+            {/if}
+          </div>
+        </div>
+        <!-- Mostrar el componente adecuado según el estado de las fuentes -->
+        {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
+          <div class="w-full flex flex-col gap-4">
+            <div class="flex justify-center items-center">
+              <GenerativeShader />
+            </div>
+          </div>
+        {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
+          <VideoInput
+            width={Number(pipelineParams.width.default)}
+            height={Number(pipelineParams.height.default)}
+          />
+        {:else}
+          <div class="w-full flex flex-col gap-4 items-center justify-center p-8 bg-gray-800 rounded-lg">
+            <div class="text-secondary text-center">
+              <p>No hay fuente de entrada activa</p>
+              <p class="text-sm mt-2">Selecciona una fuente de entrada en el panel "Input Sources"</p>
+            </div>
+          </div>
+        {/if}
       </div>
     {/if}
-    <div class={isImageMode ? 'sm:col-start-2' : 'col-span-2'}>
+    <div class="flex-1 min-w-[300px]">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="subtitle mb-0">Final Output</h3>
+        <div class="text-secondary text-sm flex items-center">
+          <div class="w-2 h-2 rounded-full {$lcmLiveStatus === LCMLiveStatus.CONNECTED ? 'bg-green-500' : $lcmLiveStatus === LCMLiveStatus.INITIALIZING ? 'bg-yellow-500' : 'bg-red-500'} mr-1"></div>
+          {$lcmLiveStatus}
+        </div>
+      </div>
       <ImagePlayer />
     </div>
   </div>
   
   <div class="flex flex-col gap-3">
+    <div class="mb-4">
+      <CanvasSizeControl />
+    </div>
     <div class="flex gap-3">
-      <Button on:click={toggleLcmLive} disabled={disabled || internalDisabled} classList={'text-lg p-3 w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'}>
-        {#if isLCMRunning}
+      <Button 
+        on:click={toggleLcmLive} 
+        disabled={disabled || internalDisabled} 
+        variant="primary"
+        size="lg"
+        classList="w-full"
+      >
+        {#if $lcmLiveStatus === LCMLiveStatus.INITIALIZING}
+          <span class="flex items-center justify-center gap-2">
+            <span class="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></span>
+            Iniciando...
+          </span>
+        {:else if isLCMRunning}
           Stop
         {:else}
           Start
         {/if}
       </Button>
-      <Button on:click={snapshotOnce} classList={'text-lg p-3 bg-blue-600 text-white hover:bg-blue-700'}>
+      <Button 
+        on:click={snapshotOnce} 
+        variant="secondary"
+        size="lg"
+      >
         Snapshot
       </Button>
     </div>

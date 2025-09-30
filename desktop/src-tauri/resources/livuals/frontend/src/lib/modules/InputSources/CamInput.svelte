@@ -55,8 +55,8 @@
       {#if $mediaDevices && $mediaDevices.length > 0}
         {#if deviceId}
           {@const currentDevice = $mediaDevices.find(d => d.deviceId === deviceId)}
-          <div class="font-medium text-black">{currentDevice?.label || 'Camera'}</div>
-          <div class="text-sm text-gray-600">
+          <div class="font-medium text-secondary">{currentDevice?.label || 'Camera'}</div>
+          <div class="text-sm text-secondary opacity-80">
             1920x1080 • 30fps
           </div>
         {/if}
@@ -66,8 +66,11 @@
   
   <div class="relative">
     <button 
-      class="flex items-center gap-1 px-3 py-1 text-sm bg-white text-black rounded-md hover:bg-gray-100 border border-gray-300"
-      on:click={() => isDropdownOpen = !isDropdownOpen}
+      class="btn btn-secondary btn-sm"
+      on:click={(e) => {
+        e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+        isDropdownOpen = !isDropdownOpen;
+      }}
     >
       <span>Cambiar</span>
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,19 +79,20 @@
     </button>
     
     {#if isDropdownOpen && $mediaDevices && $mediaDevices.length > 0}
-      <div class="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+      <div class="absolute right-0 mt-1 w-64 bg-primary border border-gray-700 rounded-md shadow-lg z-10">
         {#each $mediaDevices as device, i}
           <button 
-            class="w-full text-left px-4 py-2 hover:bg-gray-100 {deviceId === device.deviceId ? 'bg-gray-100' : ''}"
-            on:click={() => {
+            class="w-full text-left px-4 py-2 hover:bg-gray-700 {deviceId === device.deviceId ? 'bg-gray-700' : ''}"
+            on:click={(e) => {
+              e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
               deviceId = device.deviceId;
               switchCamera(deviceId);
               isDropdownOpen = false;
               dispatch('cameraSelected', { deviceId: device.deviceId });
             }}
           >
-            <div class="font-medium text-black">{device.label || `Camera ${i + 1}`}</div>
-            <div class="text-xs text-gray-500">1920x1080 • 30fps</div>
+            <div class="font-medium text-secondary">{device.label || `Camera ${i + 1}`}</div>
+            <div class="text-xs text-secondary opacity-80">1920x1080 • 30fps</div>
           </button>
         {/each}
       </div>

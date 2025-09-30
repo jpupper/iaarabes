@@ -23,6 +23,7 @@ from util import pil_to_frame, bytes_to_pil
 from io import BytesIO
 from connection_manager import ConnectionManager, ServerFullException
 from img2img import Pipeline
+from main_shaders import add_shader_routes
 
 # fix mime error on windows
 mimetypes.add_type("application/javascript", ".js")
@@ -210,6 +211,22 @@ class App:
                     "busy": getattr(pipeline, "busy", False),
                 }
             )
+            
+        @self.app.get("/api/ping")
+        async def ping():
+            return JSONResponse({"status": "ok", "message": "Server is running"})
+
+            
+        @self.app.post("/api/release")
+        async def release_resources():
+            try:
+                if hasattr(pipeline, "release_resources"):
+                    pipeline.release_resources()
+                    return JSONResponse({"status": "success", "message": "Recursos liberados correctamente"})
+                return JSONResponse({"status": "warning", "message": "Método release_resources no disponible"})
+            except Exception as e:
+                logging.error(f"Error al liberar recursos: {e}")
+                return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
         # Listado de archivos de audio ubicados en public/audio (fuera del build de frontend)
         @self.app.get("/api/audio/list")
@@ -346,6 +363,11 @@ class App:
         audio_dir = os.path.join("public", "audio")
         if not os.path.exists(audio_dir):
             os.makedirs(audio_dir)
+            
+        # asegurar carpeta de shaders estable fuera del build del frontend
+        shaders_dir = os.path.join("public", "shaders")
+        if not os.path.exists(shaders_dir):
+            os.makedirs(shaders_dir)
 
         # servir los audios desde /audio
         self.app.mount(
@@ -360,6 +382,14 @@ class App:
                 name="audio-legacy",
             )
 
+        # Agregar rutas para shaders
+        add_shader_routes(self.app)
+        
+        # Servir los shaders desde /shaders
+        self.app.mount(
+            "/shaders", NoCacheStaticFiles(directory="./public/shaders", html=False), name="shaders"
+        )
+        
         self.app.mount(
             "/", NoCacheStaticFiles(directory="./frontend/public", html=True), name="public"
         )
@@ -377,9 +407,40 @@ else:
 pipeline = Pipeline(config, device, torch_dtype)
 app = App(config, pipeline).app
 
+def list_available_shaders():
+    """Lista los shaders disponibles en la carpeta public/shaders"""
+    import os
+    
+    print("\n===== SHADERS DISPONIBLES =====\n")
+    
+    # Rutas posibles para la carpeta de shaders
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    paths = [
+        os.path.join(current_dir, "public", "shaders"),
+        os.path.abspath(os.path.join(current_dir, "..", "public", "shaders"))
+    ]
+    
+    for path in paths:
+        if os.path.isdir(path):
+            print(f"Carpeta: {path}")
+            frag_files = [f for f in os.listdir(path) if f.endswith(".frag")]
+            if frag_files:
+                print(f"Shaders encontrados ({len(frag_files)}):\n")
+                for i, file in enumerate(sorted(frag_files)):
+                    shader_id = os.path.splitext(file)[0]
+                    print(f"{i+1}. {shader_id} ({file})")
+            else:
+                print("No se encontraron archivos .frag")
+            print()
+    
+    print("===== FIN DE SHADERS DISPONIBLES =====\n")
+
 if __name__ == "__main__":
     import uvicorn
-
+    
+    # Mostrar los shaders disponibles al iniciar
+    list_available_shaders()
+    
     uvicorn.run(
         "main:app",
         host=config.host,
