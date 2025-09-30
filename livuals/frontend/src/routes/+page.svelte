@@ -12,7 +12,7 @@
   import Lyrics from '$lib/modules/Lyrics.svelte';
   import InputSourcesModule from '$lib/modules/InputSourcesModule.svelte';
   import TabsSystem from '$lib/components/TabsSystem.svelte';
-  import LogoSvg from '$lib/components/LogoSvg.svelte';
+  import Logo from '$lib/components/Logo.svelte';
 
   let pipelineParams: Fields;
   let pipelineInfo: PipelineInfo;
@@ -175,7 +175,7 @@
   <header class="flex items-center justify-between bg-primary rounded-lg mb-4 p-3 shadow-md">
     <div class="flex items-center">
       <div class="flex items-center p-1">
-        <LogoSvg height="32" color="white" />
+        <Logo height="48px" />
       </div>
       <h1 class="text-2xl font-bold ml-2 text-white">Livuals</h1>
     </div>
@@ -195,7 +195,7 @@
     <!-- Contenedor principal con dos columnas -->
     <div class="flex flex-wrap gap-4" style="height: calc(100vh - 150px); min-height: 500px;">
       <!-- Columna izquierda: Módulo activo (excepto Performance) -->
-      <div class="w-[45%] min-w-[300px] flex flex-col">
+      <div class="w-[60%] min-w-[300px] flex flex-col">
         {#if activeTab === 'ai-panel'}
           <!-- AI Controls Module -->
           <div class="module-container flex-grow flex flex-col">
@@ -240,7 +240,7 @@
       </div>
       
       <!-- Columna derecha: Siempre muestra el módulo de Performance -->
-      <div class="w-[55%] min-w-[300px] flex flex-col">
+      <div class="w-[40%] min-w-[300px] flex flex-col">
         <div class="module-container flex-grow flex flex-col">
           <h2 class="title mb-4">Performance</h2>
           <div class="flex-grow overflow-auto">
