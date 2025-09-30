@@ -261,7 +261,7 @@
               {#each $shaderParams as param (param.name)}
                 <!-- Parámetro de shader -->
                 <div class="shader-param mb-4">
-                  <div class="flex justify-between items-center mb-1">
+                  <div class="flex justify-center items-center mb-1 gap-3">
                     <label class="text-secondary font-medium" for="param-{param.name}">
                       {param.label}
                       {#if param.description}
@@ -305,7 +305,7 @@
                     <!-- Sliders para cada componente del vector -->
                     {#each param.value as component, i}
                       <div class="mb-2">
-                        <div class="flex justify-between items-center mb-1">
+                        <div class="flex justify-center items-center mb-1 gap-3">
                           <label class="text-secondary" for="param-{param.name}-{i}">
                             {['X', 'Y', 'Z', 'W'][i]}
                           </label>
