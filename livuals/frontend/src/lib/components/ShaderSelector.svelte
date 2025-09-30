@@ -12,6 +12,8 @@
 
   let isLoading = true;
   let loadError = '';
+  let isReloading = false;
+  let reloadMessage = '';
 
   // Cargar shaders al montar el componente
   onMount(async () => {
@@ -67,29 +69,54 @@
 <div class="card">
   <div class="flex justify-between items-center mb-4">
     <h2 class="subtitle">Patrón Generativo</h2>
-    <div class="flex space-x-2">
-      <button 
-        class="btn btn-primary btn-sm"
-        on:click={() => {
-          isLoading = true;
-          generativePatternActions.loadShaders().finally(() => isLoading = false);
-        }}
-      >
-        Recargar Shaders
-      </button>
-      <button 
-        class="btn btn-secondary btn-sm"
-        on:click={() => {
+    <button 
+      class="btn btn-primary btn-sm flex items-center gap-2"
+      on:click={async () => {
+        isReloading = true;
+        reloadMessage = '';
+        const currentShader = get(selectedShader);
+        try {
+          await generativePatternActions.loadShaders();
           const shaders = get(AVAILABLE_SHADERS);
-          console.log('AVAILABLE_SHADERS:', shaders);
-          console.log('selectedShader:', get(selectedShader));
-          alert(`Shaders disponibles: ${shaders.length}\n${shaders.map(s => s.id).join(', ')}`);
-        }}
-      >
-        Debug
-      </button>
-    </div>
+          
+          // Intentar mantener el shader actual seleccionado si aún existe
+          if (currentShader && shaders.find(s => s.id === currentShader.id)) {
+            await generativePatternActions.selectShader(currentShader.id);
+            reloadMessage = `✓ ${shaders.length} shaders recargados`;
+          } else {
+            reloadMessage = `✓ ${shaders.length} shaders recargados (shader anterior no encontrado)`;
+          }
+        } catch (error) {
+          console.error('Error al recargar shaders:', error);
+          reloadMessage = '✗ Error al recargar';
+        } finally {
+          isReloading = false;
+          // Limpiar mensaje después de 3 segundos
+          setTimeout(() => { reloadMessage = ''; }, 3000);
+        }
+      }}
+      disabled={isReloading}
+    >
+      {#if isReloading}
+        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Recargando...
+      {:else}
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Reload Shaders
+      {/if}
+    </button>
   </div>
+  
+  {#if reloadMessage}
+    <div class="mb-3 px-3 py-2 rounded text-sm" class:bg-green-100={reloadMessage.startsWith('✓')} class:text-green-800={reloadMessage.startsWith('✓')} class:bg-red-100={reloadMessage.startsWith('✗')} class:text-red-800={reloadMessage.startsWith('✗')}>
+      {reloadMessage}
+    </div>
+  {/if}
 
   <div class="space-y-4">
     <div class="flex flex-col">
