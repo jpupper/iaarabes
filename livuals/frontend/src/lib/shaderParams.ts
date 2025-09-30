@@ -79,34 +79,34 @@ export const shaderParamsActions = {
         switch (type) {
           case 'float':
             defaultValue = 0.5;
-            value = 0.5;
+            value = Math.random(); // Valor inicial random
             break;
           case 'int':
             defaultValue = 5;
-            value = 5;
+            value = Math.floor(Math.random() * 10); // Random entre 0-10
             min = 0;
             max = 10;
             step = 1;
             break;
           case 'vec2':
             defaultValue = [0.5, 0.5];
-            value = [0.5, 0.5];
+            value = [Math.random(), Math.random()];
             break;
           case 'vec3':
             defaultValue = [0.5, 0.5, 0.5];
-            value = [0.5, 0.5, 0.5];
+            value = [Math.random(), Math.random(), Math.random()];
             break;
           case 'vec4':
             defaultValue = [0.5, 0.5, 0.5, 1.0];
-            value = [0.5, 0.5, 0.5, 1.0];
+            value = [Math.random(), Math.random(), Math.random(), 1.0];
             break;
           case 'bool':
             defaultValue = false;
-            value = false;
+            value = Math.random() > 0.5; // Random true/false
             break;
           default:
             defaultValue = 0.5;
-            value = 0.5;
+            value = Math.random();
         }
         
         // Buscar comentarios de documentación para este uniform
@@ -205,6 +205,46 @@ export const shaderParamsActions = {
         ...p,
         value: p.defaultValue
       }));
+    });
+    
+    // Indicar que los parámetros han cambiado
+    parameterChanged.set(true);
+  },
+  
+  // Randomizar todos los parámetros
+  randomizeParams() {
+    shaderParams.update(params => {
+      return params.map(p => {
+        let randomValue: number | number[] | boolean;
+        
+        switch (p.type) {
+          case 'float':
+            randomValue = Math.random();
+            break;
+          case 'int':
+            randomValue = Math.floor(Math.random() * (p.max - p.min + 1)) + p.min;
+            break;
+          case 'vec2':
+            randomValue = [Math.random(), Math.random()];
+            break;
+          case 'vec3':
+            randomValue = [Math.random(), Math.random(), Math.random()];
+            break;
+          case 'vec4':
+            randomValue = [Math.random(), Math.random(), Math.random(), 1.0];
+            break;
+          case 'bool':
+            randomValue = Math.random() > 0.5;
+            break;
+          default:
+            randomValue = Math.random();
+        }
+        
+        return {
+          ...p,
+          value: randomValue
+        };
+      });
     });
     
     // Indicar que los parámetros han cambiado

@@ -246,15 +246,27 @@
           <div class="p-3 rounded-md bg-primary">
             <div class="mb-3 flex justify-between items-center">
               <span class="text-secondary">{$shaderParams.length} parámetros disponibles</span>
-              <button 
-                class="btn btn-secondary btn-sm"
-                on:click={(e) => {
-                  e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
-                  resetAllParams();
-                }}
-              >
-                Restablecer valores
-              </button>
+              <div class="flex gap-2">
+                <button 
+                  class="btn btn-primary btn-sm"
+                  on:click={(e) => {
+                    e.stopPropagation();
+                    shaderParamsActions.randomizeParams();
+                  }}
+                  title="Randomizar todos los parámetros"
+                >
+                  RDM
+                </button>
+                <button 
+                  class="btn btn-secondary btn-sm"
+                  on:click={(e) => {
+                    e.stopPropagation();
+                    resetAllParams();
+                  }}
+                >
+                  Restablecer valores
+                </button>
+              </div>
             </div>
             
             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
