@@ -132,24 +132,40 @@ export const shaderParamsActions = {
     return params;
   },
   
-  // Cargar parámetros de un shader
+  // Cargar parámetros de un shader preservando valores actuales
   loadParamsFromShader(source: string) {
-    const params = this.extractParamsFromShader(source);
+    const newParams = this.extractParamsFromShader(source);
+    const currentParams = get(shaderParams);
+    
+    // Preservar valores actuales de parámetros que ya existen
+    const mergedParams = newParams.map(newParam => {
+      const existingParam = currentParams.find(p => p.name === newParam.name && p.type === newParam.type);
+      if (existingParam) {
+        // Preservar el valor actual del parámetro existente
+        return {
+          ...newParam,
+          value: existingParam.value
+        };
+      }
+      return newParam;
+    });
     
     // Log de uniforms detectados
     console.log('===== UNIFORMS DETECTADOS =====');
-    if (params.length === 0) {
+    if (mergedParams.length === 0) {
       console.log('No se detectaron uniforms personalizables en el shader');
     } else {
-      console.log(`Se detectaron ${params.length} uniforms personalizables:`);
-      params.forEach(param => {
-        console.log(`- ${param.name} (${param.type}): ${param.label}${param.description ? ' - ' + param.description : ''}`);
+      console.log(`Se detectaron ${mergedParams.length} uniforms personalizables:`);
+      mergedParams.forEach(param => {
+        const preserved = currentParams.find(p => p.name === param.name);
+        const status = preserved ? '(valor preservado)' : '(valor por defecto)';
+        console.log(`- ${param.name} (${param.type}): ${param.label} ${status}${param.description ? ' - ' + param.description : ''}`);
       });
     }
     console.log('===============================');
     
-    shaderParams.set(params);
-    return params;
+    shaderParams.set(mergedParams);
+    return mergedParams;
   },
   
   // Actualizar el valor de un parámetro

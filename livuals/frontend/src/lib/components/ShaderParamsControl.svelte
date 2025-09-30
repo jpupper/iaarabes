@@ -5,10 +5,12 @@
   import { get } from 'svelte/store';
   
   let loading = true;
+  let lastShaderSource = '';
   
-  // Actualizar los parámetros cuando cambia el shader seleccionado
-  $: if ($shaderSources && $shaderSources.fragmentShaderSource) {
+  // Actualizar los parámetros solo cuando cambia realmente el código del shader
+  $: if ($shaderSources && $shaderSources.fragmentShaderSource && $shaderSources.fragmentShaderSource !== lastShaderSource) {
     loadShaderParams($shaderSources.fragmentShaderSource);
+    lastShaderSource = $shaderSources.fragmentShaderSource;
   }
   
   // Cargar los parámetros del shader
