@@ -6,25 +6,25 @@ export enum GenerativePatternStatusEnum {
     INACTIVE = "inactive",
 }
 
-// Lista de shaders disponibles
+// List of available shaders
 export const AVAILABLE_SHADERS = writable<Array<{id: string, name: string, file: string}>>([]);
 
-// Store para el código fuente de los shaders
+// Store for shader source code
 export const shaderSources = writable<{fragmentShaderSource: string, vertexShaderSource: string}>({fragmentShaderSource: '', vertexShaderSource: ''});
 
-// Store para el estado del patrón generativo
+// Store for generative pattern state
 export const generativePatternStatus = writable(GenerativePatternStatusEnum.INIT);
 
-// Definir un shader por defecto para evitar undefined
-const defaultShader = { id: 'default', name: 'Patrón por defecto', file: 'default' };
+// Define a default shader to avoid undefined
+const defaultShader = { id: 'default', name: 'Default Pattern', file: 'default' };
 
-// Store para el shader seleccionado actualmente
+// Store for the currently selected shader
 export const selectedShader = writable<{id: string, name: string, file: string}>(defaultShader);
 
-// Store para el último frame generado
+// Store for the last generated frame
 export const generativeFrameStore: Writable<{ blob: Blob }> = writable({ blob: new Blob() });
 
-// Acciones para controlar el patrón generativo
+// Actions to control the generative pattern
 export const generativePatternActions = {
     start() {
         generativePatternStatus.set(GenerativePatternStatusEnum.ACTIVE);
@@ -34,50 +34,50 @@ export const generativePatternActions = {
         generativePatternStatus.set(GenerativePatternStatusEnum.INACTIVE);
     },
 
-    // Método para cargar la lista de shaders desde el backend
+    // Method to load the list of shaders from the backend
     async loadShaders() {
         try {
-            console.log('Intentando cargar shaders desde el servidor...');
+            console.log('Attempting to load shaders from server...');
             
-            // Inicializar con shaders por defecto en caso de error
+            // Initialize with default shaders in case of error
             const defaultShaders = [
-                { id: 'radial', name: 'Patrón Radial', file: 'radial' },
-                { id: 'lines', name: 'Patrón de Líneas', file: 'lines' }
+                { id: 'radial', name: 'Radial Pattern', file: 'radial' },
+                { id: 'lines', name: 'Lines Pattern', file: 'lines' }
             ];
             
-            // Intentar directamente con la URL que sabemos que funciona
+            // Try directly with the URL we know works
             try {
-                console.log('Intentando cargar desde http://localhost:7860/api/shaders/list');
+                console.log('Attempting to load from http://localhost:7860/api/shaders/list');
                 const response = await fetch('http://localhost:7860/api/shaders/list');
                 
                 if (response.ok) {
                     const shaders = await response.json();
-                    console.log('Shaders obtenidos:', shaders);
+                    console.log('Shaders obtained:', shaders);
                     
                     if (shaders && Array.isArray(shaders) && shaders.length > 0) {
-                        console.log('Shaders cargados correctamente:', shaders);
+                        console.log('Shaders loaded successfully:', shaders);
                         AVAILABLE_SHADERS.set(shaders);
                         
-                        // Seleccionar el primer shader por defecto
+                        // Select the first shader by default
                         selectedShader.set(shaders[0]);
                         await this.loadShaderSource(shaders[0].id);
                         return;
                     } else {
-                        console.warn('La respuesta no contiene shaders válidos');
+                        console.warn('Response does not contain valid shaders');
                     }
                 } else {
-                    console.warn(`Error en la respuesta: ${response.status} ${response.statusText}`);
+                    console.warn(`Error in response: ${response.status} ${response.statusText}`);
                 }
             } catch (fetchError) {
-                console.error('Error al cargar shaders:', fetchError);
+                console.error('Error loading shaders:', fetchError);
             }
             
-            // Si llegamos aquí, usar los shaders por defecto
-            console.warn('Usando shaders por defecto');
+            // If we get here, use default shaders
+            console.warn('Using default shaders');
             AVAILABLE_SHADERS.set(defaultShaders);
             selectedShader.set(defaultShaders[0]);
             
-            // Cargar código de shader por defecto
+            // Load default shader code
             shaderSources.set({
                 fragmentShaderSource: `
                     precision mediump float;
@@ -97,8 +97,8 @@ export const generativePatternActions = {
                 `
             });
         } catch (error) {
-            console.error('Error crítico al cargar shaders:', error);
-            // Asegurarse de que siempre haya un shader seleccionado
+            console.error('Critical error loading shaders:', error);
+            // Ensure there's always a shader selected
             const currentShader = get(selectedShader);
             if (!currentShader || !currentShader.id) {
                 selectedShader.set(defaultShader);
@@ -106,7 +106,7 @@ export const generativePatternActions = {
         }
     },
 
-    // Método para seleccionar un shader por su ID
+    // Method to select a shader by its ID
     async selectShader(shaderId: string) {
         let found = false;
         AVAILABLE_SHADERS.update(shaders => {
@@ -119,54 +119,54 @@ export const generativePatternActions = {
         });
         
         if (found) {
-            console.log(`Seleccionando shader: ${shaderId}`);
-            // Cargar el shader y sus parámetros
+            console.log(`Selecting shader: ${shaderId}`);
+            // Load the shader and its parameters
             await this.loadShaderSource(shaderId);
         }
         
         return found;
     },
     
-    // Método para cargar el código fuente de un shader específico
+    // Method to load the source code of a specific shader
     async loadShaderSource(shaderId: string) {
         try {
-            console.log(`Intentando cargar shader ${shaderId}...`);
+            console.log(`Attempting to load shader ${shaderId}...`);
             
-            // Importar el módulo de parámetros de shader al inicio para evitar problemas
+            // Import the shader parameters module at the start to avoid issues
             const shaderParamsModule = await import('./shaderParams');
             const shaderParamsActions = shaderParamsModule.shaderParamsActions;
             
-            // Intentar cargar desde el backend
+            // Try to load from the backend
             try {
-                // Usar directamente la URL que sabemos que funciona
+                // Use the URL we know works directly
                 const url = `http://localhost:7860/api/shaders/${shaderId}`;
-                console.log(`Intentando fetch a ${url}...`);
+                console.log(`Attempting fetch to ${url}...`);
                 
                 const response = await fetch(url);
-                console.log(`Respuesta de ${url}:`, response.status, response.statusText);
+                console.log(`Response from ${url}:`, response.status, response.statusText);
                 
                 if (response.ok) {
                     const sources = await response.json();
-                    console.log(`Shader ${shaderId} cargado:`, sources);
+                    console.log(`Shader ${shaderId} loaded:`, sources);
                     
                     if (sources && sources.fragmentShaderSource && sources.vertexShaderSource) {
-                        // Actualizar las fuentes de shader
+                        // Update shader sources
                         shaderSources.set({
                             fragmentShaderSource: sources.fragmentShaderSource,
                             vertexShaderSource: sources.vertexShaderSource
                         });
                         
-                        // Cargar los parámetros del shader inmediatamente
-                        console.log('Analizando parámetros del shader...');
+                        // Load shader parameters immediately
+                        console.log('Analyzing shader parameters...');
                         shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
                         return;
                     }
                 }
-                throw new Error(`Error al cargar el shader ${shaderId}`);
+                throw new Error(`Error loading shader ${shaderId}`);
             } catch (fetchError) {
-                console.warn(`Error al cargar el shader ${shaderId}, usando shader por defecto:`, fetchError);
+                console.warn(`Error loading shader ${shaderId}, using default shader:`, fetchError);
                 
-                // Usar un shader por defecto según el ID
+                // Use a default shader based on the ID
                 let fragmentSource = '';
                 
                 if (shaderId === 'radial') {
@@ -175,11 +175,11 @@ export const generativePatternActions = {
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
-                        // Parámetros personalizables
-                        uniform float u_speed;         // Velocidad de animación
-                        uniform float u_frequency;     // Frecuencia del patrón
-                        uniform vec3 u_color;          // Color principal
-                        uniform float u_intensity;     // Intensidad del efecto
+                        // Customizable parameters
+                        uniform float u_speed;         // Animation speed
+                        uniform float u_frequency;     // Pattern frequency
+                        uniform vec3 u_color;          // Main color
+                        uniform float u_intensity;     // Effect intensity
                         
                         void main() {
                             vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
@@ -195,12 +195,12 @@ export const generativePatternActions = {
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
-                        // Parámetros personalizables
-                        uniform float u_frequency;     // Frecuencia de las líneas
-                        uniform float u_speed;         // Velocidad de animación
-                        uniform vec3 u_color1;         // Color principal
-                        uniform vec3 u_color2;         // Color secundario
-                        uniform bool u_vertical;       // Orientación vertical
+                        // Customizable parameters
+                        uniform float u_frequency;     // Line frequency
+                        uniform float u_speed;         // Animation speed
+                        uniform vec3 u_color1;         // Main color
+                        uniform vec3 u_color2;         // Secondary color
+                        uniform bool u_vertical;       // Vertical orientation
                         
                         void main() {
                             vec2 uv = gl_FragCoord.xy / u_resolution;
@@ -211,16 +211,16 @@ export const generativePatternActions = {
                         }
                     `;
                 } else {
-                    // Shader genérico
+                    // Generic shader
                     fragmentSource = `
                         precision mediump float;
                         uniform float u_time;
                         uniform vec2 u_resolution;
                         
-                        // Parámetros personalizables
-                        uniform float u_speed;         // Velocidad de animación
-                        uniform float u_saturation;    // Saturación del color
-                        uniform float u_brightness;    // Brillo
+                        // Customizable parameters
+                        uniform float u_speed;         // Animation speed
+                        uniform float u_saturation;    // Color saturation
+                        uniform float u_brightness;    // Brightness
                         
                         void main() {
                             vec2 uv = gl_FragCoord.xy / u_resolution;
@@ -228,7 +228,7 @@ export const generativePatternActions = {
                             float g = uv.y;
                             float b = sin(u_time * u_speed) * 0.5 + 0.5;
                             
-                            // Aplicar saturación y brillo
+                            // Apply saturation and brightness
                             vec3 color = vec3(r, g, b);
                             vec3 gray = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
                             color = mix(gray, color, u_saturation);
@@ -246,24 +246,24 @@ export const generativePatternActions = {
                     }
                 `;
                 
-                // Actualizar las fuentes de shader
+                // Update shader sources
                 shaderSources.set({
                     fragmentShaderSource: fragmentSource,
                     vertexShaderSource: vertexSource
                 });
                 
-                // Cargar los parámetros del shader inmediatamente
-                console.log('Analizando parámetros del shader por defecto...');
+                // Load shader parameters immediately
+                console.log('Analyzing default shader parameters...');
                 shaderParamsActions.loadParamsFromShader(fragmentSource);
             }
         } catch (error) {
-            console.error(`Error crítico al cargar el shader ${shaderId}:`, error);
+            console.error(`Critical error loading shader ${shaderId}:`, error);
         }
     },
     
-    // Método para actualizar el frame actual desde el canvas
+    // Method to update the current frame from the canvas
     updateFrame(imageData: string) {
-        // Convertir el string base64 a Blob
+        // Convert base64 string to Blob
         const byteString = atob(imageData.split(',')[1]);
         const mimeString = imageData.split(',')[0].split(':')[1].split(';')[0];
         const ab = new ArrayBuffer(byteString.length);

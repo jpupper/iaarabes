@@ -1,46 +1,46 @@
 import { writable, get, derived } from 'svelte/store';
 
-// Tipos de parámetros de shader
+// Shader parameter types
 export interface ShaderParam {
-  name: string;       // Nombre del parámetro (mismo que el uniform)
-  label: string;      // Etiqueta para mostrar en la UI
-  type: 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'bool';  // Tipo de parámetro
-  value: number | number[] | boolean;  // Valor actual
-  min: number;        // Valor mínimo (para sliders)
-  max: number;        // Valor máximo (para sliders)
-  step: number;       // Incremento del slider
-  defaultValue: number | number[] | boolean;  // Valor por defecto
-  description?: string; // Descripción opcional del parámetro
+  name: string;       // Parameter name (same as the uniform)
+  label: string;      // Label to display in the UI
+  type: 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'bool';  // Parameter type
+  value: number | number[] | boolean;  // Current value
+  min: number;        // Minimum value (for sliders)
+  max: number;        // Maximum value (for sliders)
+  step: number;       // Slider increment
+  defaultValue: number | number[] | boolean;  // Default value
+  description?: string; // Optional parameter description
 }
 
-// Tipo para los valores de uniforms que se pasarán al shader
+// Type for uniform values that will be passed to the shader
 export interface UniformValues {
   [key: string]: number | number[] | boolean;
 }
 
-// Lista de uniforms reservados que no se deben exponer como parámetros
+// List of reserved uniforms that should not be exposed as parameters
 export const RESERVED_UNIFORMS = [
-  'u_time',           // Tiempo transcurrido
-  'u_resolution',     // Resolución del canvas
-  'u_mouse',          // Posición del mouse
-  'iTime',            // Alias de tiempo (formato Shadertoy)
-  'iResolution',      // Alias de resolución (formato Shadertoy)
-  'iMouse',           // Alias de mouse (formato Shadertoy)
-  'time',             // Alias simple de tiempo
-  'resolution',       // Alias simple de resolución
-  'mouse',            // Alias simple de mouse
-  'a_position',       // Atributo de posición del vértice
-  'gl_FragCoord',     // Coordenada del fragmento (built-in)
-  'gl_Position'       // Posición del vértice (built-in)
+  'u_time',           // Elapsed time
+  'u_resolution',     // Canvas resolution
+  'u_mouse',          // Mouse position
+  'iTime',            // Time alias (Shadertoy format)
+  'iResolution',      // Resolution alias (Shadertoy format)
+  'iMouse',           // Mouse alias (Shadertoy format)
+  'time',             // Simple time alias
+  'resolution',       // Simple resolution alias
+  'mouse',            // Simple mouse alias
+  'a_position',       // Vertex position attribute
+  'gl_FragCoord',     // Fragment coordinate (built-in)
+  'gl_Position'       // Vertex position (built-in)
 ];
 
-// Store para los parámetros del shader actual
+// Store for the current shader parameters
 export const shaderParams = writable<ShaderParam[]>([]);
 
-// Store para el código fuente del shader con los parámetros aplicados
+// Store for the shader source code with applied parameters
 export const processedShaderSource = writable<string>('');
 
-// Store derivado que contiene solo los valores de los parámetros para pasar al shader
+// Derived store that contains only the parameter values to pass to the shader
 export const uniformValues = derived(shaderParams, ($params) => {
   const values: UniformValues = {};
   $params.forEach(param => {
@@ -49,17 +49,17 @@ export const uniformValues = derived(shaderParams, ($params) => {
   return values;
 });
 
-// Store para indicar cuando los parámetros han cambiado y el shader debe actualizarse
+// Store to indicate when parameters have changed and the shader should be updated
 export const parameterChanged = writable<boolean>(false);
 
-// Acciones para manejar los parámetros del shader
+// Actions to handle shader parameters
 export const shaderParamsActions = {
-  // Extraer parámetros de un shader
+  // Extract parameters from a shader
   extractParamsFromShader(source: string): ShaderParam[] {
     const params: ShaderParam[] = [];
     
-    // Expresión regular para encontrar declaraciones de uniforms
-    // Busca patrones como: uniform float u_paramName; o uniform vec3 u_color;
+    // Regular expression to find uniform declarations
+    // Looks for patterns like: uniform float u_paramName; or uniform vec3 u_color;
     const uniformRegex = /uniform\s+(float|int|vec[234]|bool)\s+(\w+)\s*;/g;
     let match;
     
@@ -67,9 +67,9 @@ export const shaderParamsActions = {
       const type = match[1] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'bool';
       const name = match[2];
       
-      // Verificar si es un uniform reservado
+      // Check if it's a reserved uniform
       if (!RESERVED_UNIFORMS.includes(name)) {
-        // Crear un parámetro con valores predeterminados según el tipo
+        // Create a parameter with default values based on the type
         let defaultValue: number | number[] | boolean;
         let value: number | number[] | boolean;
         let min = 0;
@@ -79,11 +79,11 @@ export const shaderParamsActions = {
         switch (type) {
           case 'float':
             defaultValue = 0.5;
-            value = Math.random(); // Valor inicial random
+            value = Math.random(); // Random initial value
             break;
           case 'int':
             defaultValue = 5;
-            value = Math.floor(Math.random() * 10); // Random entre 0-10
+            value = Math.floor(Math.random() * 10); // Random between 0-10
             min = 0;
             max = 10;
             step = 1;
@@ -109,12 +109,12 @@ export const shaderParamsActions = {
             value = Math.random();
         }
         
-        // Buscar comentarios de documentación para este uniform
+        // Look for documentation comments for this uniform
         const commentRegex = new RegExp(`//\\s*${name}\\s*:(.*)`, 'i');
         const commentMatch = source.match(commentRegex);
         const description = commentMatch ? commentMatch[1].trim() : undefined;
         
-        // Crear el objeto de parámetro
+        // Create the parameter object
         params.push({
           name,
           label: name.replace(/^u_/, '').replace(/_/g, ' '),
@@ -132,16 +132,16 @@ export const shaderParamsActions = {
     return params;
   },
   
-  // Cargar parámetros de un shader preservando valores actuales
+  // Load parameters from a shader preserving current values
   loadParamsFromShader(source: string) {
     const newParams = this.extractParamsFromShader(source);
     const currentParams = get(shaderParams);
     
-    // Preservar valores actuales de parámetros que ya existen
+    // Preserve current values of parameters that already exist
     const mergedParams = newParams.map(newParam => {
       const existingParam = currentParams.find(p => p.name === newParam.name && p.type === newParam.type);
       if (existingParam) {
-        // Preservar el valor actual del parámetro existente
+        // Preserve the current value of the existing parameter
         return {
           ...newParam,
           value: existingParam.value
@@ -150,15 +150,15 @@ export const shaderParamsActions = {
       return newParam;
     });
     
-    // Log de uniforms detectados
-    console.log('===== UNIFORMS DETECTADOS =====');
+    // Log detected uniforms
+    console.log('===== DETECTED UNIFORMS =====');
     if (mergedParams.length === 0) {
-      console.log('No se detectaron uniforms personalizables en el shader');
+      console.log('No customizable uniforms detected in the shader');
     } else {
-      console.log(`Se detectaron ${mergedParams.length} uniforms personalizables:`);
+      console.log(`Detected ${mergedParams.length} customizable uniforms:`);
       mergedParams.forEach(param => {
         const preserved = currentParams.find(p => p.name === param.name);
-        const status = preserved ? '(valor preservado)' : '(valor por defecto)';
+        const status = preserved ? '(value preserved)' : '(default value)';
         console.log(`- ${param.name} (${param.type}): ${param.label} ${status}${param.description ? ' - ' + param.description : ''}`);
       });
     }
@@ -168,7 +168,7 @@ export const shaderParamsActions = {
     return mergedParams;
   },
   
-  // Actualizar el valor de un parámetro
+  // Update the value of a parameter
   updateParamValue(name: string, value: number | number[] | boolean) {
     shaderParams.update(params => {
       const param = params.find(p => p.name === name);
@@ -178,11 +178,11 @@ export const shaderParamsActions = {
       return params;
     });
     
-    // Indicar que los parámetros han cambiado
+    // Indicate that parameters have changed
     parameterChanged.set(true);
   },
   
-  // Actualizar un componente específico de un parámetro vectorial
+  // Update a specific component of a vector parameter
   updateVectorComponent(name: string, index: number, value: number) {
     shaderParams.update(params => {
       const param = params.find(p => p.name === name);
@@ -194,11 +194,11 @@ export const shaderParamsActions = {
       return params;
     });
     
-    // Indicar que los parámetros han cambiado
+    // Indicate that parameters have changed
     parameterChanged.set(true);
   },
   
-  // Restablecer todos los parámetros a sus valores predeterminados
+  // Reset all parameters to their default values
   resetParams() {
     shaderParams.update(params => {
       return params.map(p => ({
@@ -207,11 +207,11 @@ export const shaderParamsActions = {
       }));
     });
     
-    // Indicar que los parámetros han cambiado
+    // Indicate that parameters have changed
     parameterChanged.set(true);
   },
   
-  // Randomizar todos los parámetros
+  // Randomize all parameters
   randomizeParams() {
     shaderParams.update(params => {
       return params.map(p => {
@@ -247,11 +247,11 @@ export const shaderParamsActions = {
       });
     });
     
-    // Indicar que los parámetros han cambiado
+    // Indicate that parameters have changed
     parameterChanged.set(true);
   },
   
-  // Obtener los valores actuales de los parámetros como un objeto
+  // Get the current parameter values as an object
   getCurrentValues(): UniformValues {
     const params = get(shaderParams);
     const values: UniformValues = {};
@@ -263,7 +263,7 @@ export const shaderParamsActions = {
     return values;
   },
   
-  // Aplicar los valores de los parámetros al shader
+  // Apply parameter values to the shader
   applyParamsToShader(gl: WebGLRenderingContext, program: WebGLProgram) {
     const params = get(shaderParams);
     
@@ -293,7 +293,7 @@ export const shaderParamsActions = {
       }
     });
     
-    // Resetear el indicador de cambio
+    // Reset the change indicator
     parameterChanged.set(false);
   }
 };

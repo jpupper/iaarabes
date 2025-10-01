@@ -1,6 +1,6 @@
 <script lang="ts">
   import { lcmLiveStatus, lcmLiveActions, LCMLiveStatus } from '$lib/lcmLive';
-  import { mediaStreamActions, onFrameChangeStore, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
+  import { mediaStreamActions, onFrameChangeStore, mediaStreamStatus, MediaStreamStatusEnum, mediaStream } from '$lib/mediaStream';
   import { generativePatternStatus, generativeFrameStore, GenerativePatternStatusEnum } from '$lib/generativePattern';
   import { getPipelineValues } from '$lib/store';
   import { widthHeightSlidersLocked } from '$lib/sliderStore';
@@ -8,6 +8,7 @@
   import Button from '$lib/components/Button.svelte';
   import ImagePlayer from '$lib/components/ImagePlayer.svelte';
   import VideoInput from '$lib/components/VideoInput.svelte';
+  import VideoFilePreview from '$lib/components/VideoFilePreview.svelte';
   import GenerativeShader from '$lib/components/GenerativeShader.svelte';
   import Checkbox from '$lib/components/Checkbox.svelte';
   import CanvasSizeControl from '$lib/components/CanvasSizeControl.svelte';
@@ -126,7 +127,11 @@
             {#if $generativePatternStatus === GenerativePatternStatusEnum.ACTIVE}
               Generative Pattern
             {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
-              Camera Connected
+              {#if $mediaStream}
+                Camera Connected
+              {:else}
+                Video File
+              {/if}
             {:else}
               No Input
             {/if}
@@ -140,10 +145,17 @@
             </div>
           </div>
         {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
-          <VideoInput
-            width={Number(pipelineParams.width.default)}
-            height={Number(pipelineParams.height.default)}
-          />
+          {#if $mediaStream}
+            <VideoInput
+              width={Number(pipelineParams.width.default)}
+              height={Number(pipelineParams.height.default)}
+            />
+          {:else}
+            <VideoFilePreview
+              width={Number(pipelineParams.width.default)}
+              height={Number(pipelineParams.height.default)}
+            />
+          {/if}
         {:else}
           <div class="w-full flex flex-col gap-4 items-center justify-center p-8 bg-gray-800 rounded-lg">
             <div class="text-secondary text-center">

@@ -10,19 +10,19 @@
   
   export let isActive = false;
   
-  // Estado local para mostrar/ocultar parámetros - por defecto mostrados
+  // Local state to show/hide parameters - shown by default
   let showParameters = true;
   
-  // Cargar shaders al montar el componente
+  // Load shaders when mounting the component
   onMount(async () => {
-    console.log('GenerativeInput: Verificando shaders disponibles...');
+    console.log('GenerativeInput: Checking available shaders...');
     
-    // Si no hay shaders cargados, cargarlos
+    // If no shaders are loaded, load them
     if (get(AVAILABLE_SHADERS).length === 0) {
-      console.log('GenerativeInput: No hay shaders cargados, cargando...');
+      console.log('GenerativeInput: No shaders loaded, loading...');
       await generativePatternActions.loadShaders();
     } else {
-      console.log('GenerativeInput: Shaders ya cargados:', get(AVAILABLE_SHADERS));
+      console.log('GenerativeInput: Shaders already loaded:', get(AVAILABLE_SHADERS));
     }
   });
 
@@ -30,10 +30,10 @@
     isActive = !isActive;
     
     if (isActive) {
-      // Detener cualquier stream de cámara o pantalla activo
+      // Stop any active camera or screen stream
       mediaStreamActions.stop();
       
-      // Iniciar el patrón generativo
+      // Start the generative pattern
       generativePatternActions.start();
       dispatch('generativeSelected');
       
@@ -90,57 +90,57 @@
       const shaderId = select.value;
       console.log('Selecting shader:', shaderId);
       
-      // Verificar que el shader existe en la lista de shaders disponibles
+      // Verify that the shader exists in the list of available shaders
       const availableShaders = get(AVAILABLE_SHADERS);
       const shaderExists = availableShaders.some(s => s.id === shaderId);
       
       if (!shaderExists) {
-        console.warn(`El shader ${shaderId} no existe en la lista de shaders disponibles`);
-        console.log('Shaders disponibles:', availableShaders);
+        console.warn(`Shader ${shaderId} does not exist in the list of available shaders`);
+        console.log('Available shaders:', availableShaders);
       }
       
-      // Seleccionar el shader
+      // Select the shader
       const success = await generativePatternActions.selectShader(shaderId);
-      console.log(`Shader ${shaderId} seleccionado con éxito:`, success);
+      console.log(`Shader ${shaderId} selected successfully:`, success);
       
-      // Extraer los parámetros del shader seleccionado
+      // Extract parameters from the selected shader
       const sources = get(shaderSources);
-      console.log('Fuentes de shader después de seleccionar:', sources);
+      console.log('Shader sources after selecting:', sources);
       
       if (sources && sources.fragmentShaderSource) {
         console.log('Loading shader parameters from source');
         const params = shaderParamsActions.loadParamsFromShader(sources.fragmentShaderSource);
-        console.log('Parámetros cargados:', params);
+        console.log('Parameters loaded:', params);
       } else {
         console.warn('No shader source available to load parameters from');
       }
       
-      // Verificar que el shader se haya seleccionado correctamente
+      // Verify that the shader was selected correctly
       const currentShader = get(selectedShader);
-      console.log('Shader actual después de seleccionar:', currentShader);
+      console.log('Current shader after selecting:', currentShader);
     } catch (error) {
-      console.error('Error al seleccionar shader:', error);
+      console.error('Error selecting shader:', error);
     }
   }
   
-  // Manejar cambios en los parámetros del shader
+  // Handle changes in shader parameters
   function handleParamChange(data: { name: string; value: any }) {
     const { name, value } = data;
     shaderParamsActions.updateParamValue(name, value);
   }
   
-  // Manejar cambios en componentes de vectores
+  // Handle changes in vector components
   function handleVectorComponentChange(data: { name: string; index: number; value: number }) {
     const { name, index, value } = data;
     shaderParamsActions.updateVectorComponent(name, index, value);
   }
   
-  // Restablecer todos los parámetros a sus valores predeterminados
+  // Reset all parameters to their default values
   function resetAllParams() {
     shaderParamsActions.resetParams();
   }
   
-  // Observar cambios en los shaders para cargar parámetros
+  // Watch for shader changes to load parameters
   $: if ($shaderSources && $shaderSources.fragmentShaderSource) {
     shaderParamsActions.loadParamsFromShader($shaderSources.fragmentShaderSource);
   }
@@ -152,7 +152,7 @@
       🎨
     </div>
     <div class="text-left">
-      <div class="font-medium text-secondary">Patrón Generativo</div>
+      <div class="font-medium text-secondary">Generative Pattern</div>
       <div class="text-sm text-secondary opacity-80">
         1280x720 • 60fps
       </div>
@@ -167,7 +167,7 @@
         toggleGenerative();
       }}
     >
-      {isActive ? 'Seleccionado' : 'Seleccionar'}
+      {isActive ? 'Selected' : 'Select'}
     </button>
   </div>
 </div>
@@ -175,12 +175,12 @@
 {#if isActive}
 <div class="mt-4 border-t pt-4">
   <div class="flex justify-between items-center mb-3">
-    <h4 class="card-title">Configuración</h4>
+    <h4 class="card-title">Configuration</h4>
   </div>
   
   <div>
     <div class="flex justify-between items-center mb-1">
-      <label for="shader-select" class="block text-secondary">Seleccionar Shader:</label>
+      <label for="shader-select" class="block text-secondary">Select Shader:</label>
       <button 
         class="btn btn-primary btn-sm flex items-center gap-1"
         on:click={async (e) => {
@@ -194,12 +194,12 @@
             if (currentShader && shaders.find(s => s.id === currentShader.id)) {
               await generativePatternActions.selectShader(currentShader.id);
             }
-            console.log(`✓ ${shaders.length} shaders recargados`);
+            console.log(`✓ ${shaders.length} shaders reloaded`);
           } catch (error) {
-            console.error('Error al recargar shaders:', error);
+            console.error('Error reloading shaders:', error);
           }
         }}
-        title="Recargar lista de shaders desde el servidor"
+        title="Reload shader list from server"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -221,16 +221,16 @@
           <option value={shader.id}>{shader.name}</option>
         {/each}
       {:else}
-        <option value="" disabled>Cargando shaders...</option>
+        <option value="" disabled>Loading shaders...</option>
       {/if}
     </select>
   </div>
     
-    <!-- Sección de parámetros del shader -->
+    <!-- Shader parameters section -->
     {#if $shaderParams && $shaderParams.length > 0}
       <div class="mt-4 border-t pt-4">
         <div class="flex justify-between items-center mb-3">
-          <h4 class="card-title">Parámetros del Shader</h4>
+          <h4 class="card-title">Shader Parameters</h4>
           <button 
             class="btn btn-primary btn-sm"
             on:click={(e) => {
@@ -238,14 +238,14 @@
               showParameters = !showParameters;
             }}
           >
-            {showParameters ? 'Ocultar' : 'Mostrar'}
+            {showParameters ? 'Hide' : 'Show'}
           </button>
         </div>
         
         {#if showParameters}
           <div class="p-3 rounded-md bg-primary">
             <div class="mb-3 flex justify-between items-center">
-              <span class="text-secondary">{$shaderParams.length} parámetros disponibles</span>
+              <span class="text-secondary">{$shaderParams.length} available parameters</span>
               <div class="flex gap-2">
                 <button 
                   class="btn btn-primary btn-sm"
@@ -253,7 +253,7 @@
                     e.stopPropagation();
                     shaderParamsActions.randomizeParams();
                   }}
-                  title="Randomizar todos los parámetros"
+                  title="Randomize all parameters"
                 >
                   RDM
                 </button>
@@ -264,14 +264,14 @@
                     resetAllParams();
                   }}
                 >
-                  Restablecer valores
+                  Reset values
                 </button>
               </div>
             </div>
             
             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
               {#each $shaderParams as param (param.name)}
-                <!-- Parámetro de shader -->
+                <!-- Shader parameter -->
                 <div class="shader-param mb-4">
                   <div class="flex justify-center items-center mb-1 gap-3">
                     <label class="text-secondary font-medium" for="param-{param.name}">
@@ -296,7 +296,7 @@
                   </div>
                   
                   {#if param.type === 'bool'}
-                    <!-- Checkbox para booleanos -->
+                    <!-- Checkbox for booleans -->
                     <div class="flex items-center">
                       <input
                         type="checkbox"
@@ -310,11 +310,11 @@
                         class="checkbox"
                       />
                       <label for="param-{param.name}" class="ml-2 text-secondary font-medium">
-                        {param.value ? 'Activado' : 'Desactivado'}
+                        {param.value ? 'Enabled' : 'Disabled'}
                       </label>
                     </div>
                   {:else if ['vec2', 'vec3', 'vec4'].includes(param.type) && Array.isArray(param.value)}
-                    <!-- Sliders para cada componente del vector -->
+                    <!-- Sliders for each vector component -->
                     {#each param.value as component, i}
                       <div class="mb-2">
                         <div class="flex justify-center items-center mb-1 gap-3">
@@ -340,7 +340,7 @@
                       </div>
                     {/each}
                   {:else}
-                    <!-- Slider para float o int -->
+                    <!-- Slider for float or int -->
                     <input
                       type="range"
                       id="param-{param.name}"
