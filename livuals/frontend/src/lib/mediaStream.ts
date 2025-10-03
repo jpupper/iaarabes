@@ -89,9 +89,10 @@ export const mediaStreamActions = {
             });
     },
     async stop() {
-        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-            stream.getTracks().forEach((track) => track.stop());
-        });
+        const currentStream = get(mediaStream);
+        if (currentStream) {
+            currentStream.getTracks().forEach((track) => track.stop());
+        }
         mediaStreamStatus.set(MediaStreamStatusEnum.DISCONNECTED);
         mediaStream.set(null);
     },

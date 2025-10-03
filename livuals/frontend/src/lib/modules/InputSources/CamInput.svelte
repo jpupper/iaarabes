@@ -13,10 +13,7 @@
     await mediaStreamActions.enumerateDevices();
     if ($mediaDevices && $mediaDevices.length > 0) {
       deviceId = $mediaDevices[0].deviceId;
-      if (!selectedDeviceId) {
-        selectedDeviceId = deviceId;
-        dispatch('cameraSelected', { deviceId });
-      }
+      // Don't auto-select camera - let InputSourcesModule handle default selection
     }
   });
 

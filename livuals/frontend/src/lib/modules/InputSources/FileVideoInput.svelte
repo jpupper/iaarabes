@@ -210,15 +210,17 @@
   
   async function toggleVideoInput() {
     isActive = !isActive;
-    console.log('Toggle video input - isActive:', isActive);
+    console.log('🎬 Toggle video input - isActive:', isActive);
     
     if (isActive) {
-      // Stop other media streams
-      mediaStreamActions.stop();
+      // Stop other media streams first
+      await mediaStreamActions.stop();
       
-      // Set media stream status to connected for video file
+      // IMPORTANT: Set status to CONNECTED after stop() completes
+      // This prevents stop() from overwriting our CONNECTED status
       mediaStreamStatus.set(MediaStreamStatusEnum.CONNECTED);
-      console.log('Media stream status set to CONNECTED');
+      console.log('✅ Media stream status set to CONNECTED');
+      console.log('Current mediaStreamStatus:', MediaStreamStatusEnum.CONNECTED);
       
       dispatch('videoSelected');
       
@@ -297,23 +299,22 @@
     </div>
   </div>
   
-  {#if isActive}
-    <div class="mt-2 border-t pt-3">
-      <div class="flex flex-col gap-3">
-        <!-- File input -->
-        <div>
-          <label for="video-file-input" class="block text-secondary text-sm mb-1">Select Video File:</label>
-          <input
-            id="video-file-input"
-            type="file"
-            accept="video/*"
-            bind:this={fileInput}
-            on:change={handleFileSelect}
-            class="file-input w-full"
-          />
-        </div>
-        
-        {#if selectedFile}
+  <div class="mt-2 border-t pt-3">
+    <div class="flex flex-col gap-3">
+      <!-- File input -->
+      <div>
+        <label for="video-file-input" class="block text-secondary text-sm mb-1">Select Video File:</label>
+        <input
+          id="video-file-input"
+          type="file"
+          accept="video/*"
+          bind:this={fileInput}
+          on:change={handleFileSelect}
+          class="file-input w-full"
+        />
+      </div>
+      
+      {#if selectedFile}
           <!-- Video element (hidden, only for playback) -->
           <video
             bind:this={videoElement}
@@ -322,7 +323,7 @@
             on:ended={() => {
               isPlaying = false;
             }}
-            class="hidden"
+            style="display: none;"
             loop
             playsinline
             muted
@@ -332,7 +333,23 @@
           </video>
           
           <!-- Canvas for rendering (hidden, used for frame capture) -->
-          <canvas bind:this={canvasElement} class="hidden"></canvas>
+          <canvas bind:this={canvasElement} style="display: none;"></canvas>
+          
+          <!-- Status indicator -->
+          <div class="text-xs text-secondary">
+            {#if !videoIsReady}
+              ⏳ Loading video...
+            {:else if isActive && isPlaying}
+              ▶️ Playing - Sending frames to StreamDiffusion
+            {:else if isActive}
+              ⏸️ Ready - Click Play to start
+            {:else}
+              ✅ Video loaded - Click Select to activate
+            {/if}
+          </div>
+      {/if}
+      
+      {#if isActive && selectedFile && videoIsReady}
           
           <!-- Playback controls -->
           <div class="flex flex-col gap-2">
@@ -384,9 +401,8 @@
             </div>
           </div>
         {/if}
-      </div>
     </div>
-  {/if}
+  </div>
 </div>
 
 <style>

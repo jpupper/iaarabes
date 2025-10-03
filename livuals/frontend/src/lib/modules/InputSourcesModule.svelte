@@ -22,6 +22,30 @@
   let isGenerativeActive = false;
   let isVideoActive = false;
   
+  // Auto-select Generative Pattern on mount with pattern_mixer shader
+  onMount(async () => {
+    // Use setTimeout to ensure this runs after all child components have mounted
+    setTimeout(async () => {
+      // First load shaders if not loaded
+      const availableShaders = get(AVAILABLE_SHADERS);
+      if (availableShaders.length === 0) {
+        await generativePatternActions.loadShaders();
+      }
+      
+      // Try to select pattern_mixer shader specifically
+      const shaders = get(AVAILABLE_SHADERS);
+      const patternMixer = shaders.find(s => s.id === 'pattern_mixer' || s.id === 'pattern_mixer_v2');
+      
+      if (patternMixer) {
+        console.log('Selecting pattern_mixer shader by default:', patternMixer);
+        await generativePatternActions.selectShader(patternMixer.id);
+      }
+      
+      // Then activate generative pattern
+      handleGenerativeSelected();
+    }, 100);
+  });
+  
   function handleCameraSelected(event: CustomEvent<{deviceId: string}>) {
     selectedSourceId = event.detail.deviceId;
     
@@ -133,6 +157,7 @@
     // Stop other media streams
     mediaStreamActions.stop();
     generativePatternActions.stop();
+    
     console.log('Video file selected');
   }
   
@@ -286,18 +311,6 @@
 
     <div 
       class="input-source-card card {selectedSourceId === 'video' ? 'active' : ''}"
-      on:click={() => {
-        // Always try to select the video, even if already selected
-        handleVideoSelected();
-      }}
-      role="button"
-      tabindex="0"
-      on:keydown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          // Always try to select the video, even if already selected
-          handleVideoSelected();
-        }
-      }}
     >
       <FileVideoInput 
         isActive={isVideoActive}

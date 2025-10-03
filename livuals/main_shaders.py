@@ -61,13 +61,13 @@ def add_shader_routes(app):
                     continue
                 
                 shader_id = os.path.splitext(filename)[0]
-                shader_name = shader_id.capitalize()
+                shader_name = shader_id  # Use shader_id directly without capitalization
                 
                 print(f"Cargando shader: {shader_id} ({filename})")
                 
                 items.append({
                     'id': shader_id,
-                    'name': f'Patrón {shader_name}',
+                    'name': shader_name,  # No prefix, just the shader name
                     'file': shader_id
                 })
             

@@ -4,6 +4,7 @@
   import { shaderParams, shaderParamsActions, parameterChanged } from '$lib/shaderParams';
   import { get } from 'svelte/store';
   import { canvasDimensions } from '$lib/canvasDimensions';
+  import { onFrameChangeStore, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
   
   let canvas: HTMLCanvasElement;
   let gl: WebGLRenderingContext | null = null;
@@ -168,8 +169,28 @@
     // Convertir el canvas a una imagen y enviarla al componente padre
     try {
       const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      
       // Actualizar el store con el nuevo frame
       generativePatternActions.updateFrame(imageData);
+      
+      // IMPORTANTE: También enviar a onFrameChangeStore para StreamDiffusion
+      // Convertir base64 a Blob
+      const byteString = atob(imageData.split(',')[1]);
+      const mimeString = imageData.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([ab], { type: mimeString });
+      onFrameChangeStore.set({ blob });
+      
+      // Set media stream status to CONNECTED when generative pattern is active
+      if ($generativePatternStatus === GenerativePatternStatusEnum.ACTIVE) {
+        mediaStreamStatus.set(MediaStreamStatusEnum.CONNECTED);
+      }
     } catch (error) {
       console.error('Error al capturar frame:', error);
     }
@@ -200,6 +221,8 @@
     // Si el patrón generativo se desactiva y hay una animación en curso, detenerla
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
+    // Disconnect media stream status when generative pattern stops
+    mediaStreamStatus.set(MediaStreamStatusEnum.DISCONNECTED);
   }
 
   onMount(async () => {

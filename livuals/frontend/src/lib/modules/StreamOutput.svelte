@@ -55,17 +55,13 @@
   async function toggleLcmLive() {
     try {
       if (!isLCMRunning) {
-        if (isImageMode) {
-          await mediaStreamActions.enumerateDevices();
-          await mediaStreamActions.start();
-        }
+        // Don't auto-start camera - let the input source handle its own initialization
+        // Camera will only start if it's the selected input source
         internalDisabled = true;
         await lcmLiveActions.start(getSreamdata);
         internalDisabled = false;
       } else {
-        if (isImageMode) {
-          mediaStreamActions.stop();
-        }
+        // Don't stop camera here - let the input source manage its own lifecycle
         lcmLiveActions.stop();
       }
     } catch (e) {
@@ -145,6 +141,7 @@
             </div>
           </div>
         {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
+          <!-- DEBUG: mediaStreamStatus is CONNECTED, mediaStream is {$mediaStream ? 'present' : 'null'} -->
           {#if $mediaStream}
             <VideoInput
               width={Number(pipelineParams.width.default)}
