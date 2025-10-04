@@ -7,6 +7,7 @@
     MediaStreamStatusEnum,
     onFrameChangeStore 
   } from '$lib/mediaStream';
+  import { shaderParams, shaderParamsActions, parameterChanged } from '$lib/shaderParams';
   
   const dispatch = createEventDispatcher();
   
@@ -26,6 +27,7 @@
   let isPlaying: boolean = false;
   let isSeeking: boolean = false;
   let videoIsReady: boolean = false;
+  let showShaderParams: boolean = false; // Estado para mostrar/ocultar el desplegable de parámetros
   
   const CANVAS_WIDTH = 512;
   const CANVAS_HEIGHT = 512;
@@ -269,6 +271,27 @@
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
+  
+  // Funciones para manejar los parámetros del shader
+  function handleParamChange(paramName: string, value: number | boolean) {
+    shaderParamsActions.updateParamValue(paramName, value);
+    parameterChanged.set(true);
+  }
+  
+  function handleVectorComponentChange(paramName: string, index: number, value: number) {
+    shaderParamsActions.updateVectorComponent(paramName, index, value);
+    parameterChanged.set(true);
+  }
+  
+  function resetAllParams() {
+    shaderParamsActions.resetParams();
+    parameterChanged.set(true);
+  }
+  
+  function randomizeParams() {
+    shaderParamsActions.randomizeParams();
+    parameterChanged.set(true);
+  }
 </script>
 
 <div class="w-full flex flex-col gap-3">
@@ -399,6 +422,130 @@
                 class="slider"
               />
             </div>
+            
+            <!-- Shader Parameters Dropdown with arrow only -->
+            {#if $shaderParams && $shaderParams.length > 0}
+              <div class="mt-4 border-t pt-4">
+                <button 
+                  class="w-full flex justify-between items-center py-2 px-3 bg-primary rounded-md hover:bg-opacity-90 transition-colors"
+                  on:click={(e) => {
+                    e.stopPropagation();
+                    showShaderParams = !showShaderParams;
+                  }}
+                >
+                  <span class="font-medium text-secondary">Shader Parameters</span>
+                  <span class="text-secondary arrow-icon {showShaderParams ? 'arrow-up' : 'arrow-down'}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
+                </button>
+                
+                {#if showShaderParams}
+                  <div class="mt-2 p-2 rounded-md bg-primary">
+                    <div class="mb-2 flex justify-between items-center">
+                      <span class="text-secondary text-xs">{$shaderParams.length} params</span>
+                      <div class="flex gap-1">
+                        <button 
+                          class="btn btn-xs btn-primary"
+                          on:click={(e) => {
+                            e.stopPropagation();
+                            randomizeParams();
+                          }}
+                          title="Randomize all parameters"
+                        >
+                          RDM
+                        </button>
+                        <button 
+                          class="btn btn-xs btn-secondary"
+                          on:click={(e) => {
+                            e.stopPropagation();
+                            resetAllParams();
+                          }}
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {#each $shaderParams as param (param.name)}
+                        <!-- Shader parameter (compact version) -->
+                        <div class="shader-param mb-2">
+                          <div class="flex justify-between items-center mb-0.5">
+                            <label class="text-secondary text-xs" for="param-{param.name}">
+                              {param.label}
+                            </label>
+                            <span class="text-secondary text-xs">
+                              {#if param.type === 'bool'}
+                                {param.value ? 'On' : 'Off'}
+                              {:else if typeof param.value === 'number'}
+                                {param.value.toFixed(2)}
+                              {/if}
+                            </span>
+                          </div>
+                          
+                          {#if param.type === 'bool'}
+                            <!-- Checkbox for booleans -->
+                            <div class="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="param-{param.name}"
+                                checked={Boolean(param.value)}
+                                on:change={(e) => {
+                                  e.stopPropagation();
+                                  const target = e.currentTarget;
+                                  handleParamChange(param.name, target.checked);
+                                }}
+                                class="checkbox checkbox-xs"
+                              />
+                            </div>
+                          {:else if ['vec2', 'vec3', 'vec4'].includes(param.type) && Array.isArray(param.value)}
+                            <!-- Compact vector components -->
+                            <div class="flex gap-1 mb-1">
+                              {#each param.value as component, i}
+                                <div class="flex-1">
+                                  <input
+                                    type="range"
+                                    id="param-{param.name}-{i}"
+                                    min={param.min}
+                                    max={param.max}
+                                    step={param.step}
+                                    value={component}
+                                    on:input={(e) => {
+                                      e.stopPropagation();
+                                      const target = e.currentTarget;
+                                      handleVectorComponentChange(param.name, i, parseFloat(target.value));
+                                    }}
+                                    class="slider slider-xs"
+                                  />
+                                </div>
+                              {/each}
+                            </div>
+                          {:else}
+                            <!-- Slider for float or int -->
+                            <input
+                              type="range"
+                              id="param-{param.name}"
+                              min={param.min}
+                              max={param.max}
+                              step={param.step}
+                              value={Number(param.value)}
+                              on:input={(e) => {
+                                e.stopPropagation();
+                                const target = e.currentTarget;
+                                handleParamChange(param.name, param.type === 'int' ? parseInt(target.value) : parseFloat(target.value));
+                              }}
+                              class="slider slider-xs"
+                            />
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/if}
     </div>
@@ -423,5 +570,70 @@
     outline: none;
     border-color: var(--primary-color, #3b82f6);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Estilos para el desplegable de parámetros */
+  .shader-param {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Animación para la flecha del desplegable */
+  .arrow-icon svg {
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .arrow-up svg {
+    transform: rotate(180deg);
+  }
+  
+  /* Mejora de los sliders */
+  .slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-secondary, #e5e7eb);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  .slider-xs {
+    height: 4px;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    border: none;
+  }
+  
+  .slider-xs::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    border: none;
+  }
+  
+  .slider-xs::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+  }
+  
+  /* Checkbox más pequeño */
+  .checkbox-xs {
+    width: 14px;
+    height: 14px;
   }
 </style>

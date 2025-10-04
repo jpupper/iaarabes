@@ -232,13 +232,22 @@
         <div class="flex justify-between items-center mb-3">
           <h4 class="card-title">Shader Parameters</h4>
           <button 
-            class="btn btn-primary btn-sm"
+            class="p-1 rounded-full hover:bg-primary-focus transition-all"
             on:click={(e) => {
               e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
               showParameters = !showParameters;
             }}
+            title="{showParameters ? 'Hide parameters' : 'Show parameters'}"
           >
-            {showParameters ? 'Hide' : 'Show'}
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              class="h-5 w-5 transition-transform {showParameters ? 'rotate-180' : ''}"
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </div>
         
