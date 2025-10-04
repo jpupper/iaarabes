@@ -4,7 +4,7 @@
   import CamInput from './InputSources/CamInput.svelte';
   import ShareInput from './InputSources/ShareInput.svelte';
   import GenerativeInput from './InputSources/GenerativeInput.svelte';
-  import FileVideoInput from './InputSources/FileVideoInput.svelte';
+  import VideoFileInput from './InputSources/VideoFileInput.svelte';
   import { mediaDevices, mediaStreamActions } from '$lib/mediaStream';
   import { generativePatternActions, AVAILABLE_SHADERS, selectedShader } from '$lib/generativePattern';
 
@@ -312,7 +312,7 @@
     <div 
       class="input-source-card card {selectedSourceId === 'video' ? 'active' : ''}"
     >
-      <FileVideoInput 
+      <VideoFileInput 
         isActive={isVideoActive}
         on:videoSelected={handleVideoSelected}
         on:videoDeselected={handleVideoDeselected}
