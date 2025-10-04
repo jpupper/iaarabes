@@ -12,13 +12,15 @@
   let animationFrameId: number;
 
   onMount(() => {
-    console.log('VideoFilePreview mounted');
+    console.log('✅ VideoFilePreview mounted - This component should render the video in Input source');
     if (canvasEl) {
       ctx = canvasEl.getContext('2d') as CanvasRenderingContext2D;
       canvasEl.width = size.width;
       canvasEl.height = size.height;
-      console.log('Canvas initialized for preview:', size.width, 'x', size.height);
+      console.log('✅ VideoFilePreview: Canvas initialized:', size.width, 'x', size.height);
       startRendering();
+    } else {
+      console.error('❌ VideoFilePreview: canvasEl is null!');
     }
   });
 
@@ -28,9 +30,19 @@
     }
   });
 
+  let frameCount = 0;
+  
   function startRendering() {
     function render() {
       if ($onFrameChangeStore && $onFrameChangeStore.blob && ctx && canvasEl) {
+        frameCount++;
+        if (frameCount === 1) {
+          console.log('✅ VideoFilePreview: First frame received, rendering to canvas');
+        }
+        if (frameCount % 30 === 0) {
+          console.log(`✅ VideoFilePreview: Rendered ${frameCount} frames`);
+        }
+        
         const img = new Image();
         const url = URL.createObjectURL($onFrameChangeStore.blob);
         
@@ -42,11 +54,13 @@
         };
         
         img.onerror = (error) => {
-          console.error('Error loading frame image:', error);
+          console.error('❌ VideoFilePreview: Error loading frame image:', error);
           URL.revokeObjectURL(url);
         };
         
         img.src = url;
+      } else if (frameCount === 0) {
+        console.warn('⚠️ VideoFilePreview: Waiting for frames from onFrameChangeStore...');
       }
       
       animationFrameId = requestAnimationFrame(render);

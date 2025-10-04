@@ -142,17 +142,22 @@
           </div>
         {:else if $mediaStreamStatus === MediaStreamStatusEnum.CONNECTED}
           <!-- DEBUG: mediaStreamStatus is CONNECTED, mediaStream is {$mediaStream ? 'present' : 'null'} -->
-          {#if $mediaStream}
-            <VideoInput
-              width={Number(pipelineParams.width.default)}
-              height={Number(pipelineParams.height.default)}
-            />
-          {:else}
-            <VideoFilePreview
-              width={Number(pipelineParams.width.default)}
-              height={Number(pipelineParams.height.default)}
-            />
-          {/if}
+          <div class="w-full">
+            <div class="text-xs text-yellow-500 mb-2 p-2 bg-gray-800 rounded">
+              DEBUG: mediaStreamStatus={$mediaStreamStatus}, mediaStream={$mediaStream ? 'present (camera)' : 'null (video file)'}
+            </div>
+            {#if $mediaStream}
+              <VideoInput
+                width={Number(pipelineParams.width.default)}
+                height={Number(pipelineParams.height.default)}
+              />
+            {:else}
+              <VideoFilePreview
+                width={Number(pipelineParams.width.default)}
+                height={Number(pipelineParams.height.default)}
+              />
+            {/if}
+          </div>
         {:else}
           <div class="w-full flex flex-col gap-4 items-center justify-center p-8 bg-gray-800 rounded-lg">
             <div class="text-secondary text-center">

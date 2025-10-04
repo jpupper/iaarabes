@@ -4,7 +4,8 @@
   import { 
     mediaStreamStatus, 
     MediaStreamStatusEnum,
-    onFrameChangeStore 
+    onFrameChangeStore,
+    mediaStream
   } from '$lib/mediaStream';
   
   const dispatch = createEventDispatcher();
@@ -339,9 +340,14 @@
     console.log(`VideoFileInput: ${isActive ? 'Activado' : 'Desactivado'}`);
     
     if (isActive) {
+      // IMPORTANTE: Establecer mediaStream a null para que StreamOutput use VideoFilePreview
+      mediaStream.set(null);
+      console.log('✅ VideoFileInput: mediaStream set to null');
+      
       // Establecer estado de conexión
       mediaStreamStatus.set(MediaStreamStatusEnum.CONNECTED);
-      console.log('Estado de mediaStream: CONNECTED');
+      console.log('✅ VideoFileInput: mediaStreamStatus set to CONNECTED');
+      console.log('✅ VideoFileInput: Video should now appear in Input source section');
       
       // Notificar al componente padre
       dispatch('videoSelected');
@@ -470,7 +476,7 @@
               <div class="text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full">Inactivo</div>
             {/if}
           </div>
-          <div class="relative aspect-video w-full bg-black" style="min-height: 150px;">
+          <div class="relative aspect-video w-full bg-black" style="max-width: 300px; max-height: 169px;">
             <video
               bind:this={previewVideoElement}
               src={videoUrl}
@@ -479,7 +485,7 @@
               loop
               muted
               playsinline
-              style="background-color: black; min-height: 150px;"
+              style="background-color: black;"
               on:loadeddata={() => {
                 if (!isPlaying) {
                   showStaticFrame();
