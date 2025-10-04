@@ -232,21 +232,24 @@
         <div class="flex justify-between items-center mb-3">
           <h4 class="card-title">Shader Parameters</h4>
           <button 
-            class="p-1 rounded-full hover:bg-primary-focus transition-all"
+            class="flex items-center justify-center w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all"
             on:click={(e) => {
               e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
               showParameters = !showParameters;
             }}
             title="{showParameters ? 'Hide parameters' : 'Show parameters'}"
           >
+            <!-- Flecha simple y clara -->
             <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              class="h-5 w-5 transition-transform {showParameters ? 'rotate-180' : ''}"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
+              width="16" 
+              height="16" 
+              viewBox="0 0 16 16" 
+              class="transition-transform duration-300 {showParameters ? 'rotate-180' : ''}"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              <path 
+                fill="white" 
+                d="M8 12L2 6h12z"
+              />
             </svg>
           </button>
         </div>
