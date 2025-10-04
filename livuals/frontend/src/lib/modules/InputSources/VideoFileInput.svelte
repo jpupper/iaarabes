@@ -36,7 +36,7 @@
   
   // Inicialización al montar el componente
   onMount(() => {
-    console.log('VideoFileInput: Componente montado');
+    console.log('🎬🎬🎬 VideoFileInput V2: Componente montado - NUEVO CÓDIGO 🎬🎬🎬');
     
     // Inicializar canvas cuando esté disponible
     if (canvasElement && !ctx) {
@@ -114,7 +114,7 @@
       return;
     }
     
-    console.log(`Archivo seleccionado: ${file.name} (${file.type})`);
+    console.log(`🎬 V2 - Archivo de video seleccionado: ${file.name} (${file.type})`);
     
     if (!file.type.startsWith('video/')) {
       console.error('El archivo seleccionado no es un video');

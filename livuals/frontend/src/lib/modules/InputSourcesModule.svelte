@@ -5,7 +5,7 @@
   import ShareInput from './InputSources/ShareInput.svelte';
   import GenerativeInput from './InputSources/GenerativeInput.svelte';
   import VideoFileInput from './InputSources/VideoFileInput.svelte';
-  import { mediaDevices, mediaStreamActions } from '$lib/mediaStream';
+  import { mediaDevices, mediaStreamActions, mediaStream, mediaStreamStatus, MediaStreamStatusEnum } from '$lib/mediaStream';
   import { generativePatternActions, AVAILABLE_SHADERS, selectedShader } from '$lib/generativePattern';
 
   type InputSource = {
@@ -162,6 +162,11 @@
       // Detener otros streams de medios
       mediaStreamActions.stop();
       generativePatternActions.stop();
+      
+      // CRÍTICO: Establecer mediaStream a null para que StreamOutput use VideoFilePreview
+      mediaStream.set(null);
+      mediaStreamStatus.set(MediaStreamStatusEnum.CONNECTED);
+      console.log('✅ InputSourcesModule: mediaStream set to null, mediaStreamStatus set to CONNECTED');
       
       console.log('✅ Video file selected - ID:', selectedSourceId);
     } else {
