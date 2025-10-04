@@ -173,8 +173,8 @@
 </div>
 
 {#if isActive}
-<div class="mt-4 border-t pt-4">
-  <div class="flex justify-between items-center mb-3">
+<div class="mt-2 border-t pt-2">
+  <div class="flex justify-between items-center mb-1">
     <h4 class="card-title">Configuration</h4>
   </div>
   
@@ -228,8 +228,8 @@
     
     <!-- Shader parameters section -->
     {#if $shaderParams && $shaderParams.length > 0}
-      <div class="mt-4 border-t pt-4">
-        <div class="flex justify-between items-center mb-3">
+      <div class="mt-2 border-t pt-2">
+        <div class="flex justify-between items-center mb-1">
           <h4 class="card-title">Shader Parameters</h4>
           <button 
             class="flex items-center justify-center w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all"
@@ -255,8 +255,8 @@
         </div>
         
         {#if showParameters}
-          <div class="p-3 rounded-md bg-primary">
-            <div class="mb-3 flex justify-between items-center">
+          <div class="p-2 rounded-md bg-primary">
+            <div class="mb-1 flex justify-between items-center">
               <span class="text-secondary">{$shaderParams.length} available parameters</span>
               <div class="flex gap-2">
                 <button 
@@ -281,11 +281,11 @@
               </div>
             </div>
             
-            <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
+            <div class="space-y-0.5 max-h-60 overflow-y-auto pr-2">
               {#each $shaderParams as param (param.name)}
                 <!-- Shader parameter -->
-                <div class="shader-param mb-4">
-                  <div class="flex justify-center items-center mb-1 gap-3">
+                <div class="shader-param mb-1">
+                  <div class="flex justify-center items-center mb-0.5 gap-2">
                     <label class="text-secondary font-medium" for="param-{param.name}">
                       {param.label}
                       {#if param.description}
@@ -328,8 +328,8 @@
                   {:else if ['vec2', 'vec3', 'vec4'].includes(param.type) && Array.isArray(param.value)}
                     <!-- Sliders for each vector component -->
                     {#each param.value as component, i}
-                      <div class="mb-2">
-                        <div class="flex justify-center items-center mb-1 gap-3">
+                      <div class="mb-1">
+                        <div class="flex justify-center items-center mb-0.5 gap-2">
                           <label class="text-secondary" for="param-{param.name}-{i}">
                             {['X', 'Y', 'Z', 'W'][i]}
                           </label>
