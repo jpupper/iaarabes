@@ -149,16 +149,24 @@
   }
 
   function handleVideoSelected() {
-    selectedSourceId = 'video';
-    isVideoActive = true;
-    isScreenActive = false;
-    isGenerativeActive = false;
-    
-    // Stop other media streams
-    mediaStreamActions.stop();
-    generativePatternActions.stop();
-    
-    console.log('Video file selected');
+    // Solo proceder si no está ya activo
+    if (selectedSourceId !== 'video') {
+      console.log('Activando entrada de video...');
+      
+      // Actualizar estado
+      selectedSourceId = 'video';
+      isVideoActive = true;
+      isScreenActive = false;
+      isGenerativeActive = false;
+      
+      // Detener otros streams de medios
+      mediaStreamActions.stop();
+      generativePatternActions.stop();
+      
+      console.log('✅ Video file selected - ID:', selectedSourceId);
+    } else {
+      console.log('La entrada de video ya está activa');
+    }
   }
   
   function handleVideoDeselected() {
@@ -311,6 +319,17 @@
 
     <div 
       class="input-source-card card {selectedSourceId === 'video' ? 'active' : ''}"
+      on:click={() => {
+        // Activar el video al hacer clic en la tarjeta
+        handleVideoSelected();
+      }}
+      role="button"
+      tabindex="0"
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleVideoSelected();
+        }
+      }}
     >
       <VideoFileInput 
         isActive={isVideoActive}
@@ -320,3 +339,11 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* Estilo para tarjetas activas */
+  .input-source-card.active {
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
+  }
+</style>

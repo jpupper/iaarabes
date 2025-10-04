@@ -13,6 +13,7 @@
   
   // Referencias a elementos DOM
   let videoElement: HTMLVideoElement;
+  let previewVideoElement: HTMLVideoElement;
   let canvasElement: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null = null;
   let fileInput: HTMLInputElement;
@@ -41,6 +42,31 @@
       initializeCanvas();
     }
   });
+  
+  // Función para mostrar un fotograma estático del video
+  function showStaticFrame() {
+    if (videoElement && videoIsReady && previewVideoElement) {
+      // Asegurarse de que el video tenga un tiempo válido
+      if (videoElement.currentTime === 0) {
+        videoElement.currentTime = 0.5; // Mostrar un frame que no sea el primero
+      }
+      
+      // Copiar el tiempo actual al video de vista previa
+      previewVideoElement.currentTime = videoElement.currentTime;
+      
+      // Forzar la actualización visual del video de vista previa
+      setTimeout(() => {
+        if (previewVideoElement && !isPlaying) {
+          // Avanzar un poco y retroceder para forzar la actualización del frame
+          const currentTime = previewVideoElement.currentTime;
+          previewVideoElement.currentTime = currentTime + 0.01;
+          setTimeout(() => {
+            if (previewVideoElement) previewVideoElement.currentTime = currentTime;
+          }, 50);
+        }
+      }, 100);
+    }
+  }
   
   // Limpieza al destruir el componente
   onDestroy(() => {
@@ -124,6 +150,13 @@
     
     console.log(`Video listo - Duración: ${duration}s, Dimensiones: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
     
+    // Mostrar un fotograma estático
+    if (previewVideoElement) {
+      // Avanzar un poco para mostrar un frame que no sea negro
+      videoElement.currentTime = 0.5;
+      setTimeout(showStaticFrame, 100);
+    }
+    
     // Si el video ya está activo, iniciar reproducción automáticamente
     if (isActive && !isPlaying) {
       playVideo();
@@ -134,6 +167,11 @@
   function handleTimeUpdate() {
     if (videoElement) {
       currentTime = videoElement.currentTime;
+      
+      // Sincronizar el video de vista previa si está pausado
+      if (previewVideoElement && !isPlaying && Math.abs(previewVideoElement.currentTime - videoElement.currentTime) > 0.5) {
+        previewVideoElement.currentTime = videoElement.currentTime;
+      }
     }
   }
   
@@ -296,6 +334,7 @@
   
   // Activar/desactivar la entrada de video
   async function toggleVideoInput() {
+    const wasActive = isActive;
     isActive = !isActive;
     console.log(`VideoFileInput: ${isActive ? 'Activado' : 'Desactivado'}`);
     
@@ -304,7 +343,11 @@
       mediaStreamStatus.set(MediaStreamStatusEnum.CONNECTED);
       console.log('Estado de mediaStream: CONNECTED');
       
+      // Notificar al componente padre
       dispatch('videoSelected');
+      
+      // Forzar la actualización de la vista previa
+      setTimeout(showStaticFrame, 100);
       
       // Si el video está listo pero no reproduciendo, iniciar reproducción
       if (videoIsReady && !isPlaying && videoElement) {
@@ -323,7 +366,25 @@
       mediaStreamStatus.set(MediaStreamStatusEnum.DISCONNECTED);
       console.log('Estado de mediaStream: DISCONNECTED');
       
+      // Notificar al componente padre
       dispatch('videoDeselected');
+    }
+    
+    // Forzar la actualización de la UI
+    if (wasActive !== isActive) {
+      // Pequeño retraso para asegurar que la UI se actualice
+      setTimeout(() => {
+        if (previewVideoElement) {
+          // Forzar la actualización del video
+          const currentSrc = previewVideoElement.src;
+          if (currentSrc) {
+            previewVideoElement.src = '';
+            setTimeout(() => {
+              if (previewVideoElement) previewVideoElement.src = currentSrc;
+            }, 10);
+          }
+        }
+      }, 50);
     }
   }
   
@@ -347,15 +408,19 @@
 
 <div class="w-full flex flex-col gap-3">
   <!-- Cabecera con título e icono -->
-  <div class="flex items-center justify-between">
+  <div class="w-full flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="text-xl">
+      <div class="text-xl bg-blue-900 p-2 rounded-full text-white">
         🎬
       </div>
       <div class="text-left">
-        <div class="font-medium text-secondary">Video File</div>
-        <div class="text-sm text-secondary opacity-80">
-          {selectedFile ? selectedFile.name : 'No file selected'}
+        <div class="font-medium text-secondary text-lg">Video File</div>
+        <div class="text-sm text-secondary">
+          {#if selectedFile}
+            <span class="font-bold">{selectedFile.name}</span>
+          {:else}
+            <span class="opacity-80">No file selected</span>
+          {/if}
         </div>
       </div>
     </div>
@@ -392,6 +457,44 @@
         />
       </div>
       
+      <!-- Vista previa del video (siempre visible cuando hay un video cargado) -->
+      {#if selectedFile && videoIsReady}
+        <div class="mt-2 border border-slate-600 rounded overflow-hidden">
+          <div class="flex justify-between items-center p-1 bg-slate-700">
+            <div class="text-xs text-white font-bold">Vista previa</div>
+            {#if isActive && isPlaying}
+              <div class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">Streaming</div>
+            {:else if isActive}
+              <div class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">Listo</div>
+            {:else}
+              <div class="text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full">Inactivo</div>
+            {/if}
+          </div>
+          <div class="relative aspect-video w-full bg-black" style="min-height: 150px;">
+            <video
+              bind:this={previewVideoElement}
+              src={videoUrl}
+              class="w-full h-full object-contain"
+              autoplay={isActive && isPlaying}
+              loop
+              muted
+              playsinline
+              style="background-color: black; min-height: 150px;"
+              on:loadeddata={() => {
+                if (!isPlaying) {
+                  showStaticFrame();
+                }
+              }}
+              on:click={() => {
+                if (isActive && !isPlaying) {
+                  togglePlayPause();
+                }
+              }}
+            ></video>
+          </div>
+        </div>
+      {/if}
+      
       <!-- Video y canvas (ocultos pero funcionales) -->
       <video
         bind:this={videoElement}
@@ -410,8 +513,8 @@
       
       <canvas bind:this={canvasElement} style="display: none;"></canvas>
       
-      <!-- Indicador de estado -->
-      <div class="text-xs text-secondary bg-primary bg-opacity-20 p-2 rounded">
+      <!-- Indicador de estado - Ahora más visible -->
+      <div class="text-sm p-2 rounded {!selectedFile ? 'bg-gray-700' : !videoIsReady ? 'bg-yellow-700' : isActive && isPlaying ? 'bg-green-700' : isActive ? 'bg-blue-700' : 'bg-indigo-700'} text-white">
         {#if !selectedFile}
           📁 Selecciona un archivo de video
         {:else if !videoIsReady}
@@ -475,21 +578,7 @@
         </div>
       {/if}
       
-      <!-- Vista previa del video (visible cuando está activo) -->
-      {#if selectedFile && videoIsReady && isActive}
-        <div class="mt-2 border-t pt-2">
-          <div class="text-xs text-secondary mb-1">Vista previa:</div>
-          <div class="relative aspect-square max-w-[256px] mx-auto bg-black rounded overflow-hidden">
-            <video
-              src={videoUrl}
-              class="absolute inset-0 w-full h-full object-contain"
-              autoplay={isPlaying}
-              loop
-              muted
-            ></video>
-          </div>
-        </div>
-      {/if}
+      <!-- La vista previa ahora está arriba, después del selector de archivo -->
     </div>
   </div>
 </div>
